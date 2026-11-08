@@ -433,7 +433,7 @@
     const h = geo.zFloor + fill * (geo.zRimIn - geo.zFloor);
     const out = []; let vol = 0, sH = 0;
     const qs = GL(4), NS = 30, fld = {};
-    for (const n of glass.orders) {
+    for (const n of (opts.orders || glass.orders)) {
       const dry = glass.byN[n], nm = dry.length;
       const liq = fill > 0.003 ? liquidCoupling(geo, n, dry, h) : null;
       if (liq) { vol = liq.vol; sH = liq.sH; }
@@ -489,6 +489,62 @@
     return pts;
   }
 
-  const api = { buildGlass, wetModes, profile, MATERIALS, SHAPES, AIR, WATER, _t: { makeGeometry, shellModes, liquidCoupling, besselJ, besselY, radResistance, genEig, symEig, modeAt, cholesky, cholSolve, GL } };
+  // ------------------------------------------------- multi-glass service (worker-friendly)
+  function makeService() {
+    const store = new Map(), baseF = new Map();
+    const strip = m => { const { shape, ...r } = m; return r; };
+    function f2(glass, fill) { const w = wetModes(glass, fill, { perN: 1, fmax: 6000, orders: [2] }); return w.modes.length ? w.modes[0].f : NaN; }
+    function build(id, cfg) {
+      const glass = buildGlass(Object.assign({ Ne: 30, nKeep: 6 }, cfg));
+      const N = 38, fills = [], hz = [];
+      for (let i = 0; i <= N; i++) { const f = 0.95 * i / N; fills.push(f); hz.push(f2(glass, f)); }
+      const G = { glass, cfg, fills, hz }; store.set(id, G); return G;
+    }
+    function info(G) { const g = G.glass.geo; return { rimR: g.rimR, rMax: g.rMaxOuter, rimT: g.rim.t, fDry: G.hz[0], fFull: G.hz[G.hz.length - 1], scale: G.cfg.scale || 1 }; }
+    function wet(G, fill) {
+      const w = wetModes(G.glass, fill, { perN: 1, fmax: 12000 }), g = G.glass.geo;
+      const m2 = w.modes.find(m => m.n === 2);
+      return { fill, modes: w.modes.map(strip), volume: w.volume, waterR: fill > 0.003 ? g.innerAtZ(w.h).r : 0, f: m2 ? m2.f : NaN };
+    }
+    function fillFor(G, hz) {
+      const H = G.hz, F = G.fills, n = H.length - 1;
+      if (hz >= H[0]) return { fill: 0, ok: hz <= H[0] * 1.003 };
+      if (hz <= H[n]) return { fill: F[n], ok: hz >= H[n] * 0.997 };
+      let i = 0; while (H[i + 1] > hz) i++;
+      let a = F[i], b = F[i + 1], fa = H[i] - hz, fb = H[i + 1] - hz, x = a + (b - a) * fa / (fa - fb);
+      for (let it = 0; it < 2; it++) {                    // secant polish against the full solve
+        const fx = f2(G.glass, x) - hz; if (Math.abs(fx) < 0.02) break;
+        if (fx > 0) { a = x; fa = fx; } else { b = x; fb = fx; }
+        x = a + (b - a) * fa / (fa - fb);
+      }
+      return { fill: x, ok: true };
+    }
+    function scaleFor(cfg, hz, ratio) {                  // shell freq ~ t/R^2, refined by actual solves
+      const key = cfg.shape + '|' + cfg.material + '|' + cfg.tRim;
+      let f1 = baseF.get(key);
+      if (!f1) { f1 = buildGlass(Object.assign({}, cfg, { scale: 1, orders: [2], Ne: 24, nKeep: 2 })).byN[2][0].omega / (2 * Math.PI); baseF.set(key, f1); }
+      const want = hz / ratio; let s = Math.sqrt(f1 / want);
+      s = Math.min(1.6, Math.max(0.5, s));
+      const fs = buildGlass(Object.assign({}, cfg, { scale: s, orders: [2], Ne: 24, nKeep: 2 })).byN[2][0].omega / (2 * Math.PI);
+      s = Math.min(1.6, Math.max(0.5, s * Math.sqrt(fs / want)));
+      return s;
+    }
+    function handle(m) {
+      switch (m.cmd) {
+        case 'build': { const G = build(m.id, m.cfg); return { id: m.id, info: info(G), wet: wet(G, m.fill || 0) }; }
+        case 'fill': { const G = store.get(m.id); return { id: m.id, wet: wet(G, m.fill) }; }
+        case 'tune': { const G = store.get(m.id), r = fillFor(G, m.hz); return { id: m.id, inRange: r.ok, wet: wet(G, r.fill) }; }
+        case 'fit': {
+          const cfg = Object.assign({}, m.cfg); cfg.scale = scaleFor(cfg, m.hz, m.ratio || 0.86);
+          const G = build(m.id, cfg), r = fillFor(G, m.hz);
+          return { id: m.id, info: info(G), inRange: r.ok, wet: wet(G, r.fill) };
+        }
+      }
+      return { id: m.id, error: 'unknown cmd' };
+    }
+    return { handle };
+  }
+
+  const api = { makeService, buildGlass, wetModes, profile, MATERIALS, SHAPES, AIR, WATER, _t: { makeGeometry, shellModes, liquidCoupling, besselJ, besselY, radResistance, genEig, symEig, modeAt, cholesky, cholSolve, GL } };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GlassPhysics = api;
 })(typeof self !== 'undefined' ? self : this);

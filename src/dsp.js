@@ -30,8 +30,8 @@
   function muSteady(fr, v) { return Math.max(0.02, fr.mu0 - fr.d * Math.log((v + fr.eps) / 0.1) + fr.beta * v); }
 
   class GlassVoice {
-    constructor(fs) {
-      this.fs = fs; this.os = 2; this.dt = 1 / (fs * this.os);
+    constructor(fs, opt) {
+      this.fs = fs; this.os = (opt && opt.os) || 2; this.dt = 1 / (fs * this.os);
       this.N = 0; this.cap = 64; this.alloc(this.cap);
       this.keys = []; this.alpha = 0.37; this.split = 3e-4;
       this.Rrim = 0.036;
@@ -98,6 +98,13 @@
       }
       if (f.theta != null) this.thetaT = f.theta;
       if (f.omega != null) this.omT = f.omega;
+    }
+    // true when the glass is silent and untouched: skip it entirely (saves CPU with many glasses)
+    quiet() {
+      if (this.down || this.tapT >= 0) return false;
+      let e = 0; for (let k = 0; k < this.N; k++) e += this.G[k] * (Math.abs(this.v[k]) + this.om[k] * Math.abs(this.q[k]));
+      if (e < 3e-6) { if (e > 0) { this.q.fill(0); this.v.fill(0); } return true; }
+      return false;
     }
     tap(theta, force) { this.tapT = 0; this.tapTh = theta; this.tapF = force || 6; }
     damp() { this.q.fill(0); this.v.fill(0); }

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>GlassHouse · Harp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>/*CSS*/</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><h1>Glass<span>House</span></h1><span class="mode">harp</span></div>
+    <nav>
+      <a href="index.html" class="solo">Solo glass</a>
+      <button id="settingsBtn" class="ghost">Settings</button>
+    </nav>
+  </header>
+
+  <div class="stagewrap">
+    <canvas id="stage" aria-label="Glass harp. Rub rims with one finger per glass; tap inside a glass to flick it; tap a label to retune."></canvas>
+    <div id="hint" class="hint"><div class="hint-in"><b>Tap to wake the glasses</b><span>Rub several rims at once, one finger per glass. Tap a glass's note label to retune it. Keys below set the water.</span><small>On iPhone/iPad, turn off silent mode to hear Web Audio.</small></div></div>
+    <div id="busy" class="busy"><div class="spin"></div><span id="busyMsg">Tuning…</span></div>
+  </div>
+
+  <div class="keysbar">
+    <div class="keyopts">
+      <label class="tog"><input type="checkbox" id="autorub"><span>Keys rub too <em>(armonica)</em></span></label>
+      <span id="midiStat" class="midi">MIDI: —</span>
+    </div>
+    <canvas id="keys" aria-label="Keyboard: each key fills a glass with water to that pitch"></canvas>
+  </div>
+</div>
+
+<div id="sheet" class="sheet">
+  <div class="sheet-in">
+    <div class="sheet-head"><b id="edTitle">Glass</b><button id="edClose" class="ghost">Done</button></div>
+    <div class="ed-note">
+      <button data-d="-12">−oct</button><button data-d="-1">−1</button>
+      <div class="ed-big"><b id="edNote">C5</b><span id="edHz">—</span></div>
+      <button data-d="1">+1</button><button data-d="12">+oct</button>
+    </div>
+    <p class="ed-sub">Changing the note re-sizes the glass and pours water to hit the pitch. Or set it by hand:</p>
+    <div class="row"><label>Water <em id="edFillOut">—</em></label><input id="edFill" type="range" min="0" max="95" step="0.25"></div>
+    <div class="row"><label>Size <em id="edSizeOut">—</em></label><input id="edSize" type="range" min="50" max="160" step="1"></div>
+    <div class="row"><label>Shape</label><select id="edShape"></select></div>
+  </div>
+</div>
+
+<div id="settings" class="sheet">
+  <div class="sheet-in">
+    <div class="sheet-head"><b>Harp settings</b><button id="setClose" class="ghost">Done</button></div>
+    <div class="grid2">
+      <div class="row"><label>Glasses</label><div class="seg" id="count"><button data-v="4">4</button><button data-v="5">5</button><button data-v="6" class="on">6</button></div></div>
+      <div class="row"><label>Material</label><select id="material"></select></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label>Root</label><select id="root"></select></div>
+      <div class="row"><label>Scale</label><select id="scale"></select></div>
+    </div>
+    <div class="btns"><button id="tuneScale" class="primary">Tune to scale</button><button id="spread">Spread sizes for keyboard</button></div>
+    <div class="row"><label>Finger pressure <em id="pressOut">1.00 N</em></label><input id="press" type="range" min="0.2" max="3" step="0.05" value="1"></div>
+    <div class="row"><label>Finger</label><div class="seg" id="cond"><button data-v="wet" class="on">Wet &amp; clean</button><button data-v="dry">Dry</button><button data-v="oily">Oily</button></div></div>
+    <div class="grid2">
+      <div class="row"><label>Room <em id="reverbOut">30%</em></label><input id="reverb" type="range" min="0" max="100" value="30"></div>
+      <div class="row"><label>Volume <em id="volOut">80%</em></label><input id="vol" type="range" min="0" max="100" value="80"></div>
+    </div>
+    <p class="ed-sub">Each glass is the same physics as the solo page (shell FE, potential-flow water, stick–slip finger), running as an independent voice. A glass's pitch range is set by its size: water can only lower it, by about 9–11 semitones from empty to nearly full.</p>
+  </div>
+</div>
+<script type="text/plain" id="dsp-src">/*DSP*/</script>
+<script type="text/plain" id="phys-src">/*PHYSICS*/</script>
+<script>/*APP*/</script>
+</body>
+</html>

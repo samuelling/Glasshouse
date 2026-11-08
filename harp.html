@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>GlassHouse · Harp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{--bg:#07090d;--card:#10151d;--line:#1d2531;--ink:#e8edf3;--dim:#8794a6;--faint:#4d5a6b;--accent:#9fd3ff;--water:#3aa6d8;--warm:#f2c38b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.4 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.app{height:100dvh;display:grid;grid-template-rows:auto 1fr auto;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px 6px}
+.brand{display:flex;align-items:baseline;gap:10px}
+h1{font:300 26px/1 Fraunces,Georgia,serif;margin:0}h1 span{font-weight:500;color:var(--accent)}
+.mode{font:500 11px "IBM Plex Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)}
+nav{display:flex;gap:8px;align-items:center}
+a.solo{color:var(--dim);font-size:13px;text-decoration:none;padding:7px 10px}
+button{font:500 13px Inter,sans-serif;color:var(--ink);background:#151c26;border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+button.ghost{background:transparent}
+button.primary{background:#1c3348;border-color:#2a4a66;color:#d7ecff}
+.stagewrap{position:relative;min-height:0}
+#stage{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.keysbar{padding:4px 10px 10px}
+.keyopts{display:flex;justify-content:space-between;align-items:center;padding:2px 6px 6px;gap:10px}
+.tog{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
+.tog em{font-style:normal;color:var(--faint)}
+.tog input{width:18px;height:18px;accent-color:#9fd3ff}
+.midi{font:12px "IBM Plex Mono",monospace;color:var(--faint);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.midi.on{color:var(--accent)}
+#keys{width:100%;height:clamp(70px,12vh,120px);display:block;touch-action:none;border-radius:10px}
+.hint{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;pointer-events:none;transition:opacity .4s}
+.hint.gone{opacity:0}
+.hint-in{display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;background:rgba(10,14,20,.82);border:1px solid var(--line);border-radius:14px;padding:12px 16px;max-width:440px;backdrop-filter:blur(6px)}
+.hint-in span{color:var(--dim);font-size:13px}.hint-in small{color:var(--faint);font-size:11px}
+.busy{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:rgba(10,14,20,.85);border:1px solid var(--line);border-radius:20px;padding:6px 12px;font-size:12px;color:var(--dim);opacity:0;transition:opacity .2s;pointer-events:none}
+.busy.on{opacity:1}
+.spin{width:12px;height:12px;border-radius:50%;border:2px solid var(--faint);border-top-color:var(--accent);animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.sheet{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s;z-index:5}
+.sheet.on{opacity:1;pointer-events:auto}
+.sheet-in{width:min(560px,100%);max-height:86dvh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:14px 18px calc(18px + env(safe-area-inset-bottom));-webkit-user-select:none;user-select:none}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ed-note{display:flex;gap:8px;align-items:center;justify-content:center;margin:6px 0}
+.ed-note button{min-width:52px;padding:12px 10px}
+.ed-big{display:flex;flex-direction:column;align-items:center;min-width:120px}
+.ed-big b{font:300 34px/1 Fraunces,serif}.ed-big span{font:12px "IBM Plex Mono",monospace;color:var(--dim)}
+.ed-sub{color:var(--faint);font-size:12.5px;margin:8px 0}
+.row{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}
+.row label{font-size:13px;color:var(--dim);display:flex;justify-content:space-between}
+.row em{font:normal 500 12.5px "IBM Plex Mono",monospace;color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+input[type=range]{width:100%;accent-color:#9fd3ff;height:26px}
+select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;font-size:14px;width:100%}
+.seg{display:flex;background:#0b0f15;border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
+.seg button{flex:1;background:transparent;border:0;color:var(--dim);padding:8px 6px;border-radius:8px}
+.seg button.on{background:#1d2735;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><h1>Glass<span>House</span></h1><span class="mode">harp</span></div>
+    <nav>
+      <a href="index.html" class="solo">Solo glass</a>
+      <button id="settingsBtn" class="ghost">Settings</button>
+    </nav>
+  </header>
+
+  <div class="stagewrap">
+    <canvas id="stage" aria-label="Glass harp. Rub rims with one finger per glass; tap inside a glass to flick it; tap a label to retune."></canvas>
+    <div id="hint" class="hint"><div class="hint-in"><b>Tap to wake the glasses</b><span>Rub several rims at once, one finger per glass. Tap a glass's note label to retune it. Keys below set the water.</span><small>On iPhone/iPad, turn off silent mode to hear Web Audio.</small></div></div>
+    <div id="busy" class="busy"><div class="spin"></div><span id="busyMsg">Tuning…</span></div>
+  </div>
+
+  <div class="keysbar">
+    <div class="keyopts">
+      <label class="tog"><input type="checkbox" id="autorub"><span>Keys rub too <em>(armonica)</em></span></label>
+      <span id="midiStat" class="midi">MIDI: —</span>
+    </div>
+    <canvas id="keys" aria-label="Keyboard: each key fills a glass with water to that pitch"></canvas>
+  </div>
+</div>
+
+<div id="sheet" class="sheet">
+  <div class="sheet-in">
+    <div class="sheet-head"><b id="edTitle">Glass</b><button id="edClose" class="ghost">Done</button></div>
+    <div class="ed-note">
+      <button data-d="-12">−oct</button><button data-d="-1">−1</button>
+      <div class="ed-big"><b id="edNote">C5</b><span id="edHz">—</span></div>
+      <button data-d="1">+1</button><button data-d="12">+oct</button>
+    </div>
+    <p class="ed-sub">Changing the note re-sizes the glass and pours water to hit the pitch. Or set it by hand:</p>
+    <div class="row"><label>Water <em id="edFillOut">—</em></label><input id="edFill" type="range" min="0" max="95" step="0.25"></div>
+    <div class="row"><label>Size <em id="edSizeOut">—</em></label><input id="edSize" type="range" min="50" max="160" step="1"></div>
+    <div class="row"><label>Shape</label><select id="edShape"></select></div>
+  </div>
+</div>
+
+<div id="settings" class="sheet">
+  <div class="sheet-in">
+    <div class="sheet-head"><b>Harp settings</b><button id="setClose" class="ghost">Done</button></div>
+    <div class="grid2">
+      <div class="row"><label>Glasses</label><div class="seg" id="count"><button data-v="4">4</button><button data-v="5">5</button><button data-v="6" class="on">6</button></div></div>
+      <div class="row"><label>Material</label><select id="material"></select></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label>Root</label><select id="root"></select></div>
+      <div class="row"><label>Scale</label><select id="scale"></select></div>
+    </div>
+    <div class="btns"><button id="tuneScale" class="primary">Tune to scale</button><button id="spread">Spread sizes for keyboard</button></div>
+    <div class="row"><label>Finger pressure <em id="pressOut">1.00 N</em></label><input id="press" type="range" min="0.2" max="3" step="0.05" value="1"></div>
+    <div class="row"><label>Finger</label><div class="seg" id="cond"><button data-v="wet" class="on">Wet &amp; clean</button><button data-v="dry">Dry</button><button data-v="oily">Oily</button></div></div>
+    <div class="grid2">
+      <div class="row"><label>Room <em id="reverbOut">30%</em></label><input id="reverb" type="range" min="0" max="100" value="30"></div>
+      <div class="row"><label>Volume <em id="volOut">80%</em></label><input id="vol" type="range" min="0" max="100" value="80"></div>
+    </div>
+    <p class="ed-sub">Each glass is the same physics as the solo page (shell FE, potential-flow water, stick–slip finger), running as an independent voice. A glass's pitch range is set by its size: water can only lower it, by about 9–11 semitones from empty to nearly full.</p>
+  </div>
+</div>
+<script type="text/plain" id="dsp-src">/*  GlassHouse — real-time dynamics (runs inside the AudioWorklet)
+ *  ------------------------------------------------------------
+ *  Each wet mode (n, m) is a degenerate pair (cos n·θ / sin n·θ shapes). A real
+ *  glass is never perfectly axisymmetric, so the pair is split by a tiny
+ *  fraction about a fixed "defect" axis — this is what makes real glasses beat.
+ *
+ *  Finger = fingertip pad: mass m_p on a shear spring/damper (skin) whose base
+ *  is your fingertip moving round the rim. Pad ↔ glass contact obeys a
+ *  velocity-weakening (Stribeck) friction law, solved implicitly every
+ *  sub-step: stick if the force needed to keep zero slip is below μs·F_N,
+ *  otherwise slip with μ(|v_rel|)·F_N. The glass side of that solve uses the
+ *  exact one-step mobility of all modes at the contact point, so stick–slip
+ *  locks to the glass resonance on its own — nothing is told what pitch to make.
+ *  Skin also damps radial/axial rim motion under the finger (∝ F_N^0.7).
+ *  Sound = far-field pressure from each mode's radiated power with its cos(nθ)
+ *  directivity, picked up at two virtual mics in front of the glass.
+ */
+(function (root) {
+  'use strict';
+  const TAU = Math.PI * 2;
+  const wrap = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
+
+  const FINGER = {
+    wet:  { mu0: 0.60, d: 0.15, eps: 0.05, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+    dry:  { mu0: 0.85, d: 0.03,  eps: 0.001, beta: 0.6, Dc: 2e-6, vAge: 0.002 },
+    oily: { mu0: 0.22, d: 0.004, eps: 0.003, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+  };
+
+  // steady-state friction: logarithmic velocity weakening (rate-and-state form) + viscous term
+  function muSteady(fr, v) { return Math.max(0.02, fr.mu0 - fr.d * Math.log((v + fr.eps) / 0.1) + fr.beta * v); }
+
+  class GlassVoice {
+    constructor(fs, opt) {
+      this.fs = fs; this.os = (opt && opt.os) || 2; this.dt = 1 / (fs * this.os);
+      this.N = 0; this.cap = 64; this.alloc(this.cap);
+      this.keys = []; this.alpha = 0.37; this.split = 3e-4;
+      this.Rrim = 0.036;
+      // finger
+      this.down = false; this.theta = 0; this.thetaT = 0; this.omT = 0; this.omS = 0;
+      this.FN = 1.0; this.fr = FINGER.wet; this.mu = 0.7;
+      this.mp = 3e-5; this.kp = 1000; this.cp = 1.5;   // fingertip shear impedance (Wiertlewski & Hayward 2012) this.xp = 0; this.vp = 0; this.vb = 0;
+      this.cc0 = 3.0; this.rough = 0.01; this.ridge = 4.5e-4; this.ridgePh = 0; this.nz = 0;
+      // taps
+      this.tapT = -1; this.tapDur = 4e-4; this.tapF = 0; this.tapTh = 0;
+      // mics: viewer is at the bottom of the screen (theta = +pi/2), mics +-25 deg
+      this.mic = [Math.PI / 2 + 0.44, Math.PI / 2 - 0.44];
+      this.gain = 1 / 0.25;                            // 0.25 Pa -> full scale
+      this.stickCount = 0; this.stepCount = 0; this.pAcc = 0; this.pN = 0;
+      this.seed = 12345;
+    }
+    alloc(n) {
+      const F = () => new Float64Array(n);
+      this.q = F(); this.v = F(); this.w2 = F(); this.dc = F(); this.om = F();
+      this.nn = new Int32Array(n); this.isB = new Uint8Array(n);
+      this.aT = F(); this.aR = F(); this.aA = F(); this.gL = F(); this.gR = F(); this.G = F();
+      this.pT = F(); this.pR = F(); this.pA = F(); this.vs = F();
+    }
+    rand() { this.seed = (this.seed * 1664525 + 1013904223) >>> 0; return this.seed / 4294967296 * 2 - 1; }
+
+    setModes(list, opt) {
+      opt = opt || {};
+      if (opt.split != null) this.split = opt.split;
+      if (opt.alpha != null) this.alpha = opt.alpha;
+      if (opt.Rrim) this.Rrim = opt.Rrim;
+      const oldIdx = new Map(); this.keys.forEach((k, i) => oldIdx.set(k, i));
+      const oq = this.q, ov = this.v;
+      const lim = 1.7 / this.dt, need = list.length * 2;
+      if (need > this.cap) { this.cap = need; }
+      const q = new Float64Array(this.cap), v = new Float64Array(this.cap);
+      const keep = this.q; this.alloc(this.cap);
+      const keys = []; let k = 0;
+      for (const m of list) {
+        if (m.omega > lim) continue;
+        for (let b = 0; b < 2; b++) {
+          const key = m.key + (b ? 'B' : 'A'), j = oldIdx.get(key);
+          if (j != null) { q[k] = oq[j]; v[k] = ov[j]; }
+          const om = m.omega * (1 + (b ? 0.5 : -0.5) * this.split);
+          this.om[k] = om;
+          this.w2[k] = Math.pow(2 / this.dt * Math.sin(om * this.dt / 2), 2);  // pre-warped for symplectic Euler
+          this.dc[k] = 2 * m.zeta * om;
+          this.nn[k] = m.n; this.isB[k] = b;
+          this.aT[k] = m.rimV; this.aR[k] = m.rimR; this.aA[k] = m.rimA; this.G[k] = m.G;
+          const fL = this.mic[0] - this.alpha, fR = this.mic[1] - this.alpha;
+          this.gL[k] = m.G * (b ? Math.sin(m.n * fL) : Math.cos(m.n * fL));
+          this.gR[k] = m.G * (b ? Math.sin(m.n * fR) : Math.cos(m.n * fR));
+          keys.push(key); k++;
+        }
+      }
+      this.q = q; this.v = v; this.N = k; this.keys = keys;
+    }
+
+    setFinger(f) {
+      if (f.FN != null) this.FN = f.FN;
+      if (f.cond) this.fr = FINGER[f.cond] || FINGER.wet;
+      if (f.down != null) {
+        if (f.down && !this.down) { this.mu = muSteady(this.fr, 0); this.theta = f.theta; this.thetaT = f.theta; this.omS = 0; this.xp = 0; this.vp = 0; }
+        this.down = f.down;
+      }
+      if (f.theta != null) this.thetaT = f.theta;
+      if (f.omega != null) this.omT = f.omega;
+    }
+    // true when the glass is silent and untouched: skip it entirely (saves CPU with many glasses)
+    quiet() {
+      if (this.down || this.tapT >= 0) return false;
+      let e = 0; for (let k = 0; k < this.N; k++) e += this.G[k] * (Math.abs(this.v[k]) + this.om[k] * Math.abs(this.q[k]));
+      if (e < 3e-6) { if (e > 0) { this.q.fill(0); this.v.fill(0); } return true; }
+      return false;
+    }
+    tap(theta, force) { this.tapT = 0; this.tapTh = theta; this.tapF = force || 6; }
+    damp() { this.q.fill(0); this.v.fill(0); }
+
+    // shape factors for oscillator k at angle th
+    process(outL, outR, len) {
+      const dt = this.dt, os = this.os, N = this.N, fr = this.fr;
+      const q = this.q, v = this.v, w2 = this.w2, dc = this.dc, nn = this.nn, isB = this.isB;
+      const aT = this.aT, aR = this.aR, aA = this.aA, pT = this.pT, pR = this.pR, pA = this.pA, vs = this.vs;
+      const cn = new Float64Array(8), snn = new Float64Array(8), tc = new Float64Array(8), ts = new Float64Array(8);
+      const aW = 1 - Math.exp(-dt / 0.018);
+      for (let i = 0; i < len; i++) {
+        let accL = 0, accR = 0;
+        for (let o = 0; o < os; o++) {
+          // ---- finger kinematics (smoothed velocity, soft position lock)
+          if (this.down) {
+            this.omS += (this.omT - this.omS) * aW;
+            this.thetaT += this.omT * dt;
+            this.theta += this.omS * dt + wrap(this.thetaT - this.theta) * 25 * dt;
+            this.vb = this.Rrim * this.omS;
+          }
+          const ph = this.theta - this.alpha, c1 = Math.cos(ph), s1 = Math.sin(ph);
+          cn[0] = 1; snn[0] = 0; cn[1] = c1; snn[1] = s1;
+          for (let n = 2; n < 8; n++) { cn[n] = cn[n - 1] * c1 - snn[n - 1] * s1; snn[n] = snn[n - 1] * c1 + cn[n - 1] * s1; }
+          let tapping = false, Ft = 0;
+          if (this.tapT >= 0) {
+            const tp = this.tapTh - this.alpha, c = Math.cos(tp), s = Math.sin(tp);
+            tc[0] = 1; ts[0] = 0; tc[1] = c; ts[1] = s;
+            for (let n = 2; n < 8; n++) { tc[n] = tc[n - 1] * c - ts[n - 1] * s; ts[n] = ts[n - 1] * c + tc[n - 1] * s; }
+            Ft = -this.tapF * Math.sin(Math.PI * this.tapT / this.tapDur);          // inward radial push
+            tapping = true; this.tapT += dt; if (this.tapT > this.tapDur) this.tapT = -1;
+          }
+          // ---- contact geometry + explicit forces
+          let vr = 0, va = 0, Y = 0;
+          for (let k = 0; k < N; k++) {
+            const n = nn[k], C = cn[n], S = snn[n];
+            if (isB[k]) { pT[k] = -aT[k] * C; pR[k] = aR[k] * S; pA[k] = aA[k] * S; }
+            else { pT[k] = aT[k] * S; pR[k] = aR[k] * C; pA[k] = aA[k] * C; }
+            vr += pR[k] * v[k]; va += pA[k] * v[k]; Y += pT[k] * pT[k];
+          }
+          const cc = this.down ? this.cc0 * Math.sqrt(this.FN) : 0;
+          const Fr = -cc * vr, Fa = -cc * va;
+          let vg = 0;
+          for (let k = 0; k < N; k++) {
+            let Q = pR[k] * Fr + pA[k] * Fa;
+            if (tapping) { const n = nn[k]; Q += Ft * aR[k] * (isB[k] ? ts[n] : tc[n]); }
+            const vk = (v[k] + dt * (-w2[k] * q[k] + Q)) / (1 + dc[k] * dt);
+            vs[k] = vk; vg += pT[k] * vk;
+          }
+          // ---- friction (implicit)
+          let F = 0;
+          if (this.down && this.FN > 0) {
+            const mp = this.mp;
+            const vpS = (this.vp + dt * (-this.kp * this.xp + this.cp * this.vb) / mp) / (1 + this.cp * dt / mp);
+            const vrel = vpS - vg, Z = dt * (1 / mp + Y);
+            // fingerprint ridges + skin micro-roughness modulate the friction coefficient
+            this.ridgePh += Math.abs(this.vb) * dt / this.ridge;
+            this.nz = 0.97 * this.nz + 0.03 * this.rand();
+            const mod = 1 + this.rough * (0.6 * Math.sin(TAU * this.ridgePh) + 4 * this.nz);
+            const FN = this.FN, muNow = this.mu * mod;
+            const Fs = vrel / Z;
+            let vAfter;
+            if (Math.abs(Fs) <= muNow * FN) { F = Fs; vAfter = 0; this.stickCount++; }
+            else { const sg = vrel > 0 ? 1 : -1; F = sg * muNow * FN; vAfter = vrel - Z * F; }
+            // rate-and-state friction: the contact's friction level relaxes toward the
+            // steady-state Stribeck value over a slip distance Dc (and re-ages while stuck)
+            const av = Math.abs(vAfter);
+            const muSS = muSteady(fr, av);
+            const rate = fr.tau ? 1 / fr.tau : (av + fr.vAge) / fr.Dc;
+            this.mu += (muSS - this.mu) * (1 - Math.exp(-dt * rate));
+            this.vp = vpS - dt * F / mp;
+            this.xp += dt * (this.vp - this.vb);
+            this.stepCount++;
+          }
+          // ---- update modes, radiate
+          let pl = 0, pr = 0;
+          const gL = this.gL, gR = this.gR;
+          for (let k = 0; k < N; k++) {
+            const vk = vs[k] + dt * pT[k] * F;
+            v[k] = vk; q[k] += dt * vk;
+            pl += gL[k] * vk; pr += gR[k] * vk;
+          }
+          accL += pl; accR += pr;
+        }
+        const L = accL / os, R = accR / os;
+        this.pAcc += 0.5 * (L * L + R * R); this.pN++;
+        outL[i] = L * this.gain; outR[i] = R * this.gain;
+      }
+    }
+
+    // snapshot for visuals: complex amplitude per oscillator
+    snapshot() {
+      const N = this.N, amps = new Float64Array(N * 2);
+      for (let k = 0; k < N; k++) { amps[2 * k] = this.q[k]; amps[2 * k + 1] = this.v[k] / this.om[k]; }
+      const prms = Math.sqrt(this.pAcc / Math.max(1, this.pN));
+      const stick = this.stepCount ? this.stickCount / this.stepCount : 0;
+      this.pAcc = 0; this.pN = 0; this.stickCount = 0; this.stepCount = 0;
+      return { keys: this.keys.slice(), amps, theta: this.theta, down: this.down, prms, stick, vb: this.vb, alpha: this.alpha };
+    }
+  }
+
+  const api = { GlassVoice, FINGER };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GlassDSP = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script type="text/plain" id="phys-src">/*  GlassHouse — physics core
+ *  ------------------------------------------------------------
+ *  1. Glass bowl = thin elastic shell of revolution (Love first-approximation
+ *     strains), discretised along the meridian with C1 Hermite-cubic elements
+ *     for u (meridional), v (circumferential), w (normal), one Fourier order n
+ *     at a time, clamped where the bowl meets the stem.
+ *  2. Liquid = inviscid, incompressible potential flow inside the real bowl
+ *     shape, pressure-release free surface (phi = 0; gravity/capillarity are
+ *     negligible at audio frequency). Solved by Ritz minimisation of the
+ *     kinetic-energy functional -> added-mass matrix in dry-mode coordinates.
+ *  3. Wet modes = generalised eigenproblem K q = w^2 (M + M_fluid) q in a
+ *     basis of dry modes.
+ *  4. Losses per mode: material loss factor, acoustic radiation (exact 2-D
+ *     cylindrical-harmonic radiation resistance applied strip-wise along the
+ *     bowl height), viscous Stokes boundary layer of the liquid at the wall
+ *     (from the potential-flow slip velocity), small support loss.
+ */
+(function (root) {
+  'use strict';
+
+  // ---------------------------------------------------------------- linalg
+  function mat(n, m) { const a = new Array(n); for (let i = 0; i < n; i++) a[i] = new Float64Array(m); return a; }
+
+  function cholesky(A) {
+    const n = A.length, L = mat(n, n);
+    for (let j = 0; j < n; j++) {
+      let s = A[j][j];
+      const Lj = L[j];
+      for (let k = 0; k < j; k++) s -= Lj[k] * Lj[k];
+      if (!(s > 0)) throw new Error('matrix not SPD at ' + j + ' (' + s + ')');
+      const d = Math.sqrt(s); Lj[j] = d;
+      for (let i = j + 1; i < n; i++) {
+        const Li = L[i]; let t = A[i][j];
+        for (let k = 0; k < j; k++) t -= Li[k] * Lj[k];
+        Li[j] = t / d;
+      }
+    }
+    return L;
+  }
+  function fwdSub(L, b) { const n = L.length, x = new Float64Array(n); for (let i = 0; i < n; i++) { let s = b[i]; const Li = L[i]; for (let k = 0; k < i; k++) s -= Li[k] * x[k]; x[i] = s / Li[i]; } return x; }
+  function bwdSubT(L, b) { const n = L.length, x = new Float64Array(n); for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let k = i + 1; k < n; k++) s -= L[k][i] * x[k]; x[i] = s / L[i][i]; } return x; }
+  function cholSolve(L, b) { return bwdSubT(L, fwdSub(L, b)); }
+
+  // Symmetric eigen-decomposition (Householder tridiagonalisation + implicit QL; JAMA port)
+  function symEig(A) {
+    const n = A.length, V = A.map(r => Float64Array.from(r)), d = new Float64Array(n), e = new Float64Array(n);
+    for (let j = 0; j < n; j++) d[j] = V[n - 1][j];
+    for (let i = n - 1; i > 0; i--) {
+      let scale = 0, h = 0;
+      for (let k = 0; k < i; k++) scale += Math.abs(d[k]);
+      if (scale === 0) {
+        e[i] = d[i - 1];
+        for (let j = 0; j < i; j++) { d[j] = V[i - 1][j]; V[i][j] = 0; V[j][i] = 0; }
+      } else {
+        for (let k = 0; k < i; k++) { d[k] /= scale; h += d[k] * d[k]; }
+        let f = d[i - 1], g = Math.sqrt(h); if (f > 0) g = -g;
+        e[i] = scale * g; h -= f * g; d[i - 1] = f - g;
+        for (let j = 0; j < i; j++) e[j] = 0;
+        for (let j = 0; j < i; j++) {
+          f = d[j]; V[j][i] = f; g = e[j] + V[j][j] * f;
+          for (let k = j + 1; k <= i - 1; k++) { g += V[k][j] * d[k]; e[k] += V[k][j] * f; }
+          e[j] = g;
+        }
+        f = 0;
+        for (let j = 0; j < i; j++) { e[j] /= h; f += e[j] * d[j]; }
+        const hh = f / (h + h);
+        for (let j = 0; j < i; j++) e[j] -= hh * d[j];
+        for (let j = 0; j < i; j++) {
+          f = d[j]; g = e[j];
+          for (let k = j; k <= i - 1; k++) V[k][j] -= (f * e[k] + g * d[k]);
+          d[j] = V[i - 1][j]; V[i][j] = 0;
+        }
+      }
+      d[i] = h;
+    }
+    for (let i = 0; i < n - 1; i++) {
+      V[n - 1][i] = V[i][i]; V[i][i] = 1; const h = d[i + 1];
+      if (h !== 0) {
+        for (let k = 0; k <= i; k++) d[k] = V[k][i + 1] / h;
+        for (let j = 0; j <= i; j++) {
+          let g = 0;
+          for (let k = 0; k <= i; k++) g += V[k][i + 1] * V[k][j];
+          for (let k = 0; k <= i; k++) V[k][j] -= g * d[k];
+        }
+      }
+      for (let k = 0; k <= i; k++) V[k][i + 1] = 0;
+    }
+    for (let j = 0; j < n; j++) { d[j] = V[n - 1][j]; V[n - 1][j] = 0; }
+    V[n - 1][n - 1] = 1; e[0] = 0;
+    for (let i = 1; i < n; i++) e[i - 1] = e[i];
+    e[n - 1] = 0;
+    let f = 0, tst1 = 0; const eps = Math.pow(2, -52);
+    for (let l = 0; l < n; l++) {
+      tst1 = Math.max(tst1, Math.abs(d[l]) + Math.abs(e[l]));
+      let m = l;
+      while (m < n) { if (Math.abs(e[m]) <= eps * tst1) break; m++; }
+      if (m > l) {
+        let iter = 0;
+        do {
+          if (++iter > 200) break;
+          let g = d[l], p = (d[l + 1] - g) / (2 * e[l]), r = Math.hypot(p, 1); if (p < 0) r = -r;
+          d[l] = e[l] / (p + r); d[l + 1] = e[l] * (p + r);
+          const dl1 = d[l + 1]; let h = g - d[l];
+          for (let i = l + 2; i < n; i++) d[i] -= h;
+          f += h;
+          p = d[m]; let c = 1, c2 = c, c3 = c; const el1 = e[l + 1]; let s = 0, s2 = 0;
+          for (let i = m - 1; i >= l; i--) {
+            c3 = c2; c2 = c; s2 = s;
+            g = c * e[i]; h = c * p; r = Math.hypot(p, e[i]);
+            e[i + 1] = s * r; s = e[i] / r; c = p / r; p = c * d[i] - s * g;
+            d[i + 1] = h + s * (c * g + s * d[i]);
+            for (let k = 0; k < n; k++) { h = V[k][i + 1]; V[k][i + 1] = s * V[k][i] + c * h; V[k][i] = c * V[k][i] - s * h; }
+          }
+          p = -s * s2 * c3 * el1 * e[l] / dl1; e[l] = s * p; d[l] = c * p;
+        } while (Math.abs(e[l]) > eps * tst1);
+      }
+      d[l] = d[l] + f; e[l] = 0;
+    }
+    const idx = Array.from({ length: n }, (_, i) => i).sort((a, b) => d[a] - d[b]);
+    return { values: idx.map(i => d[i]), vectors: idx.map(i => { const v = new Float64Array(n); for (let k = 0; k < n; k++) v[k] = V[k][i]; return v; }) };
+  }
+
+  // Generalised symmetric-definite eigenproblem K x = lambda M x, x^T M x = 1
+  function genEig(K, M, nKeep) {
+    const n = K.length, L = cholesky(M);
+    const X = mat(n, n);                              // X = L^-1 K   (column by column)
+    const col = new Float64Array(n);
+    for (let j = 0; j < n; j++) { for (let i = 0; i < n; i++) col[i] = K[i][j]; const y = fwdSub(L, col); for (let i = 0; i < n; i++) X[i][j] = y[i]; }
+    const C = mat(n, n);                              // C = L^-1 X^T
+    for (let j = 0; j < n; j++) { for (let i = 0; i < n; i++) col[i] = X[j][i]; const y = fwdSub(L, col); for (let i = 0; i < n; i++) C[i][j] = y[i]; }
+    for (let i = 0; i < n; i++) for (let j = 0; j < i; j++) { const a = 0.5 * (C[i][j] + C[j][i]); C[i][j] = a; C[j][i] = a; }
+    const { values, vectors } = symEig(C);
+    const k = Math.min(nKeep || n, n), out = [];
+    for (let i = 0; i < k; i++) out.push({ lambda: values[i], x: bwdSubT(L, vectors[i]) });
+    return out;
+  }
+
+  // -------------------------------------------------------------- quadrature
+  const GL = (function () {
+    function rule(n) {                                // Gauss-Legendre on [-1,1]
+      const x = new Float64Array(n), w = new Float64Array(n);
+      for (let i = 0; i < n; i++) {
+        let z = Math.cos(Math.PI * (i + 0.75) / (n + 0.5)), pp = 0;
+        for (let it = 0; it < 100; it++) {
+          let p1 = 1, p2 = 0;
+          for (let j = 1; j <= n; j++) { const p3 = p2; p2 = p1; p1 = ((2 * j - 1) * z * p2 - (j - 1) * p3) / j; }
+          pp = n * (z * p1 - p2) / (z * z - 1);
+          const z1 = z; z = z1 - p1 / pp; if (Math.abs(z - z1) < 1e-15) break;
+        }
+        x[i] = z; w[i] = 2 / ((1 - z * z) * pp * pp);
+      }
+      return { x, w };
+    }
+    const c = {}; return n => c[n] || (c[n] = rule(n));
+  })();
+
+  // Legendre P_0..P_{N-1} and derivatives at X
+  function legendre(N, X, P, dP) {
+    P[0] = 1; dP[0] = 0; if (N > 1) { P[1] = X; dP[1] = 1; }
+    for (let k = 2; k < N; k++) { P[k] = ((2 * k - 1) * X * P[k - 1] - (k - 1) * P[k - 2]) / k; dP[k] = dP[k - 2] + (2 * k - 1) * P[k - 1]; }
+  }
+
+  // ----------------------------------------------------------------- Bessel
+  const EULER = 0.5772156649015329;
+  function besselJ(n, x) { let s = 0, t = Math.pow(x / 2, n); for (let k = 1; k <= n; k++) t /= k; for (let k = 0; k < 80; k++) { s += t; t *= -(x * x / 4) / ((k + 1) * (k + 1 + n)); if (Math.abs(t) < 1e-18 * Math.abs(s)) break; } return s; }
+  function besselY(n, x) {                            // A&S 9.1.11, integer n >= 0
+    const h = x / 2; let s1 = 0;
+    if (n > 0) { const fact = [1]; for (let i = 1; i <= n; i++) fact[i] = fact[i - 1] * i; for (let k = 0; k < n; k++) s1 += fact[n - k - 1] / fact[k] * Math.pow(h * h, k); s1 *= -Math.pow(h, -n) / Math.PI; }
+    const s2 = 2 / Math.PI * Math.log(h) * besselJ(n, x);
+    let psiK = -EULER, psiNK = -EULER; for (let i = 1; i <= n; i++) psiNK += 1 / i;
+    let t = Math.pow(h, n); for (let i = 1; i <= n; i++) t /= i;          // (h^n)/(0! n!)
+    let s3 = 0;
+    for (let k = 0; k < 80; k++) {
+      s3 += (psiK + psiNK) * t;
+      t *= -(h * h) / ((k + 1) * (n + k + 1)); psiK += 1 / (k + 1); psiNK += 1 / (n + k + 1);
+      if (Math.abs(t) < 1e-18) break;
+    }
+    return s1 + s2 - s3 / Math.PI;
+  }
+  // Real part of the specific radiation impedance of a cylinder vibrating as cos(n theta):
+  //   z_n = i rho c H_n(ka)/H_n'(ka);  Re z_n = rho c * (2/(pi ka)) / |H_n'(ka)|^2  (Wronskian)
+  function radResistance(n, x, rhoC) {
+    const dJ = n === 0 ? -besselJ(1, x) : 0.5 * (besselJ(n - 1, x) - besselJ(n + 1, x));
+    const dY = n === 0 ? -besselY(1, x) : 0.5 * (besselY(n - 1, x) - besselY(n + 1, x));
+    return rhoC * (2 / (Math.PI * x)) / (dJ * dJ + dY * dY);
+  }
+
+  // --------------------------------------------------------------- geometry
+  // Midsurface meridian = cubic Bezier in (r, z) [mm], P0 at stem junction.
+  function makeGeometry(P, scale, tRim, tBase) {
+    const S = scale * 1e-3;
+    const p = P.map(q => [q[0] * S, q[1] * S]);
+    function bz(t) {
+      const u = 1 - t;
+      const r = u * u * u * p[0][0] + 3 * u * u * t * p[1][0] + 3 * u * t * t * p[2][0] + t * t * t * p[3][0];
+      const z = u * u * u * p[0][1] + 3 * u * u * t * p[1][1] + 3 * u * t * t * p[2][1] + t * t * t * p[3][1];
+      const d1 = (a, b) => 3 * (u * u * (p[1][a] - p[0][a]) + 2 * u * t * (p[2][a] - p[1][a]) + t * t * (p[3][a] - p[2][a]));
+      const d2 = a => 6 * (u * (p[2][a] - 2 * p[1][a] + p[0][a]) + t * (p[3][a] - 2 * p[2][a] + p[1][a]));
+      const d3 = a => 6 * (p[3][a] - 3 * p[2][a] + 3 * p[1][a] - p[0][a]);
+      return { r, z, rt: d1(0), zt: d1(1), rtt: d2(0), ztt: d2(1), rttt: d3(0), zttt: d3(1) };
+    }
+    const NT = 4000, Ts = new Float64Array(NT + 1), Ss = new Float64Array(NT + 1);
+    let prev = Math.hypot(bz(0).rt, bz(0).zt);
+    for (let i = 1; i <= NT; i++) {                   // Simpson per sub-interval
+      const t0 = (i - 1) / NT, t1 = i / NT, tm = 0.5 * (t0 + t1);
+      const bm = bz(tm), b1 = bz(t1), sm = Math.hypot(bm.rt, bm.zt), s1 = Math.hypot(b1.rt, b1.zt);
+      Ss[i] = Ss[i - 1] + (t1 - t0) * (prev + 4 * sm + s1) / 6; Ts[i] = t1; prev = s1;
+    }
+    const L = Ss[NT];
+    function tOfS(s) {
+      if (s <= 0) return 0; if (s >= L) return 1;
+      let lo = 0, hi = NT; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (Ss[m] < s) lo = m; else hi = m; }
+      let t = Ts[lo] + (s - Ss[lo]) / (Ss[hi] - Ss[lo]) * (Ts[hi] - Ts[lo]);
+      const b = bz(t); t += 0; return t;
+    }
+    function thick(s) { const x = 1 - s / L; return tRim + (tBase - tRim) * x * x; }
+    function at(s) {
+      const b = bz(tOfS(s));
+      const sig = Math.hypot(b.rt, b.zt), c = b.rt / sig, sn = b.zt / sig;
+      const N = b.rt * b.ztt - b.zt * b.rtt, Nt = b.rt * b.zttt - b.zt * b.rttt;
+      const sigt = (b.rt * b.rtt + b.zt * b.ztt) / sig;
+      const k1 = N / (sig * sig * sig);
+      const dk1 = (Nt / (sig * sig * sig) - 3 * N * sigt / (sig * sig * sig * sig)) / sig;
+      const k2 = sn / b.r, dk2 = c * (k1 - k2) / b.r;
+      return { r: b.r, z: b.z, c, sn, k1, dk1, k2, dk2, t: thick(s) };
+    }
+    // inner (liquid-side) surface table, z made monotone
+    const NI = 800, inner = { s: new Float64Array(NI + 1), r: new Float64Array(NI + 1), z: new Float64Array(NI + 1) };
+    for (let i = 0; i <= NI; i++) {
+      const s = L * i / NI, g = at(s);
+      inner.s[i] = s; inner.r[i] = g.r - 0.5 * g.t * g.sn; inner.z[i] = g.z + 0.5 * g.t * g.c;
+      if (i > 0 && inner.z[i] <= inner.z[i - 1]) inner.z[i] = inner.z[i - 1] + 1e-9;
+    }
+    function innerAtZ(zq) {                           // returns {r, s}
+      const Z = inner.z; if (zq <= Z[0]) return { r: inner.r[0], s: 0 };
+      if (zq >= Z[NI]) return { r: inner.r[NI], s: L };
+      let lo = 0, hi = NI; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (Z[m] < zq) lo = m; else hi = m; }
+      const f = (zq - Z[lo]) / (Z[hi] - Z[lo]);
+      return { r: inner.r[lo] + f * (inner.r[hi] - inner.r[lo]), s: inner.s[lo] + f * (inner.s[hi] - inner.s[lo]) };
+    }
+    let rMaxOuter = 0; for (let i = 0; i <= 200; i++) { const g = at(L * i / 200); rMaxOuter = Math.max(rMaxOuter, g.r + 0.5 * g.t * g.sn); }
+    const rim = at(L);
+    return { L, at, thick, inner, innerAtZ, zFloor: inner.z[0], zRimIn: inner.z[NI], rim, rimR: rim.r, rMaxOuter, profileT: bz };
+  }
+
+  // -------------------------------------------------------- shell FE (order n)
+  function hermite(x, h, N, dN, ddN) {
+    const x2 = x * x, x3 = x2 * x;
+    N[0] = 1 - 3 * x2 + 2 * x3; N[1] = h * (x - 2 * x2 + x3); N[2] = 3 * x2 - 2 * x3; N[3] = h * (x3 - x2);
+    dN[0] = (-6 * x + 6 * x2) / h; dN[1] = (1 - 4 * x + 3 * x2); dN[2] = (6 * x - 6 * x2) / h; dN[3] = (3 * x2 - 2 * x);
+    ddN[0] = (-6 + 12 * x) / (h * h); ddN[1] = (-4 + 6 * x) / h; ddN[2] = (6 - 12 * x) / (h * h); ddN[3] = (6 * x - 2) / h;
+  }
+  const FIELD_OFF = { U: 0, V: 2, W: 4 };
+  const LOC = f => [FIELD_OFF[f], FIELD_OFF[f] + 1, 6 + FIELD_OFF[f], 6 + FIELD_OFF[f] + 1];
+  const LU = LOC('U'), LV = LOC('V'), LW = LOC('W');
+
+  function shellModes(geo, matl, n, opts) {
+    opts = opts || {};
+    const Ne = opts.Ne || 36, nKeep = opts.nKeep || 8, clamp = opts.clamp !== false;
+    const L = geo.L, nodes = new Float64Array(Ne + 1);
+    for (let i = 0; i <= Ne; i++) { const x = i / Ne; nodes[i] = L * (0.6 * x + 0.4 * x * x); } // finer near the clamp
+    const nd = 6 * (Ne + 1), K = mat(nd, nd), M = mat(nd, nd);
+    const E = matl.E, nu = matl.nu, rho = matl.rho, q = GL(5);
+    const N = new Float64Array(4), dN = new Float64Array(4), ddN = new Float64Array(4);
+    const rows = Array.from({ length: 9 }, () => new Float64Array(12)); // e1 e2 g k1 k2 tw | U V W
+    for (let e = 0; e < Ne; e++) {
+      const sa = nodes[e], h = nodes[e + 1] - sa, base = 6 * e;
+      for (let iq = 0; iq < q.x.length; iq++) {
+        const x = 0.5 * (q.x[iq] + 1), wq = 0.5 * q.w[iq] * h, s = sa + x * h, g = geo.at(s);
+        hermite(x, h, N, dN, ddN);
+        for (const r of rows) r.fill(0);
+        const [e1, e2, gm, kb1, kb2, tw, mU, mV, mW] = rows;
+        const r = g.r, c = g.c, k1 = g.k1, k2 = g.k2, dk1 = g.dk1, dk2 = g.dk2;
+        for (let a = 0; a < 4; a++) {
+          const iu = LU[a], iv = LV[a], iw = LW[a];
+          const U = N[a], Up = dN[a], V = N[a], Vp = dN[a], W = N[a], Wp = dN[a], Wpp = ddN[a];
+          // contributions of U-dof
+          e1[iu] += Up; e2[iu] += c * U / r; gm[iu] += -n * U / r;
+          { const B1 = k1 * U, B1p = dk1 * U + k1 * Up; kb1[iu] += B1p; kb2[iu] += c * B1 / r; tw[iu] += -n * B1 / r; }
+          mU[iu] += U;
+          // V-dof
+          e2[iv] += n * V / r; gm[iv] += Vp - c * V / r;
+          { const B2 = k2 * V, B2p = dk2 * V + k2 * Vp; kb2[iv] += n * B2 / r; tw[iv] += B2p - c * B2 / r; }
+          mV[iv] += V;
+          // W-dof
+          e1[iw] += k1 * W; e2[iw] += k2 * W;
+          { const B1 = -Wp, B1p = -Wpp, B2 = n * W / r, B2p = n * (Wp / r - c * W / (r * r));
+            kb1[iw] += B1p; kb2[iw] += (n * B2 + c * B1) / r; tw[iw] += B2p - c * B2 / r - n * B1 / r; }
+          mW[iw] += W;
+        }
+        const t = g.t, Cm = E * t / (1 - nu * nu), Db = E * t * t * t / (12 * (1 - nu * nu));
+        const dA = Math.PI * r * wq, mu = rho * t * dA, G = 0.5 * (1 - nu);
+        for (let i = 0; i < 12; i++) {
+          const Ki = K[base + i], Mi = M[base + i];
+          for (let j = 0; j < 12; j++) {
+            Ki[base + j] += dA * (Cm * (e1[i] * e1[j] + e2[i] * e2[j] + nu * (e1[i] * e2[j] + e2[i] * e1[j]) + G * gm[i] * gm[j])
+                                + Db * (kb1[i] * kb1[j] + kb2[i] * kb2[j] + nu * (kb1[i] * kb2[j] + kb2[i] * kb1[j]) + G * tw[i] * tw[j]));
+            Mi[base + j] += mu * (mU[i] * mU[j] + mV[i] * mV[j] + mW[i] * mW[j]);
+          }
+        }
+      }
+    }
+    const fixed = new Set(clamp ? [0, 2, 4, 5] : []);
+    const free = []; for (let i = 0; i < nd; i++) if (!fixed.has(i)) free.push(i);
+    const Kr = mat(free.length, free.length), Mr = mat(free.length, free.length);
+    for (let i = 0; i < free.length; i++) for (let j = 0; j < free.length; j++) { Kr[i][j] = K[free[i]][free[j]]; Mr[i][j] = M[free[i]][free[j]]; }
+    const sol = genEig(Kr, Mr, nKeep);
+    return sol.map(m => {
+      const x = new Float64Array(nd); free.forEach((gi, i) => x[gi] = m.x[i]);
+      return { n, omega: Math.sqrt(Math.max(m.lambda, 0)), x, nodes };
+    });
+  }
+
+  // evaluate a mode's fields at arclength s
+  function modeAt(mode, s, out) {
+    const nodes = mode.nodes, Ne = nodes.length - 1;
+    let e = 0, lo = 0, hi = Ne; if (s >= nodes[Ne]) e = Ne - 1; else { while (hi - lo > 1) { const m = (lo + hi) >> 1; if (nodes[m] <= s) lo = m; else hi = m; } e = lo; }
+    const h = nodes[e + 1] - nodes[e], x = Math.min(1, Math.max(0, (s - nodes[e]) / h));
+    const N = _N, dN = _dN, ddN = _ddN; hermite(x, h, N, dN, ddN);
+    const b = 6 * e, X = mode.x; out = out || {};
+    const f = (off, arr) => arr[0] * X[b + off] + arr[1] * X[b + off + 1] + arr[2] * X[b + 6 + off] + arr[3] * X[b + 6 + off + 1];
+    out.U = f(0, N); out.Up = f(0, dN); out.V = f(2, N); out.Vp = f(2, dN); out.W = f(4, N); out.Wp = f(4, dN);
+    return out;
+  }
+  const _N = new Float64Array(4), _dN = new Float64Array(4), _ddN = new Float64Array(4);
+
+  // ---------------------------------------------------------- liquid (Ritz)
+  function liquidCoupling(geo, n, dry, hLevel, opts) {
+    opts = opts || {};
+    const zf = geo.zFloor, H = hLevel - zf;
+    if (H < 1e-4) return null;
+    const Np = opts.Np || 6, Nq = opts.Nq || 6, Nb = Np * Nq;
+    const top = geo.innerAtZ(hLevel), sH = top.s;
+    let Rs = top.r; for (let i = 0; i <= 40; i++) Rs = Math.max(Rs, geo.innerAtZ(zf + H * i / 40).r);
+    const Pp = new Float64Array(Np), dPp = new Float64Array(Np), Pq = new Float64Array(Nq), dPq = new Float64Array(Nq);
+    const phi = new Float64Array(Nb), phR = new Float64Array(Nb), phZ = new Float64Array(Nb), phOr = new Float64Array(Nb);
+    function basis(r, z) {
+      const rho = r / Rs, X = 2 * rho * rho - 1, zh = Math.max(0, (z - zf) / H), Y = 2 * zh - 1, hz = hLevel - z;
+      legendre(Np, X, Pp, dPp); legendre(Nq, Y, Pq, dPq);
+      const rn = Math.pow(rho, n), rn1 = n > 0 ? Math.pow(rho, n - 1) : 0;
+      for (let p = 0; p < Np; p++) for (let qq = 0; qq < Nq; qq++) {
+        const k = p * Nq + qq, PP = Pp[p], PQ = Pq[qq];
+        phi[k] = hz * rn * PP * PQ;
+        phOr[k] = hz * rn1 / Rs * PP * PQ;                       // phi / r
+        phR[k] = hz * PQ * (n * rn1 / Rs * PP + rn * dPp[p] * 4 * rho / Rs);
+        phZ[k] = rn * PP * (-PQ + hz * dPq[qq] * 2 / H);
+      }
+    }
+    // stiffness-like matrix A = pi * int (grad phi_k . grad phi_l) r dr dz
+    const A = mat(Nb, Nb), qz = GL(4), qr = GL(16), NZ = 14;
+    let vol = 0;
+    for (let iz = 0; iz < NZ; iz++) for (let a = 0; a < qz.x.length; a++) {
+      const u = (iz + 0.5 * (qz.x[a] + 1)) / NZ, wu = 0.5 * qz.w[a] / NZ;
+      const z = zf + H * u * u, wz = wu * 2 * H * u, R = geo.innerAtZ(z).r;
+      vol += Math.PI * R * R * wz;
+      for (let b = 0; b < qr.x.length; b++) {
+        const r = 0.5 * R * (qr.x[b] + 1), w = Math.PI * wz * 0.5 * R * qr.w[b] * r;
+        basis(r, z);
+        for (let k = 0; k < Nb; k++) {
+          const ak = phR[k] * w, bk = phZ[k] * w, ck = n * n * phOr[k] * w, Ak = A[k];
+          for (let l = 0; l <= k; l++) Ak[l] += ak * phR[l] + bk * phZ[l] + ck * phOr[l];
+        }
+      }
+    }
+    let tr = 0; for (let k = 0; k < Nb; k++) { for (let l = 0; l < k; l++) A[l][k] = A[k][l]; tr += A[k][k]; }
+    for (let k = 0; k < Nb; k++) A[k][k] += 1e-11 * tr / Nb;
+    const LA = cholesky(A);
+    // wall integrals over the wetted inner surface
+    const nm = dry.length, qs = GL(4), NS = 36, wall = [];
+    const bvec = Array.from({ length: nm }, () => new Float64Array(Nb)), fld = {};
+    for (let is = 0; is < NS; is++) for (let a = 0; a < qs.x.length; a++) {
+      const s = sH * (is + 0.5 * (qs.x[a] + 1)) / NS, ws = sH * 0.5 * qs.w[a] / NS, g = geo.at(s);
+      const r = g.r - 0.5 * g.t * g.sn, z = Math.min(hLevel, g.z + 0.5 * g.t * g.c);
+      basis(r, z);
+      const pt = { w: ws, r, phi: Float64Array.from(phi), dphiT: new Float64Array(Nb), phOr: Float64Array.from(phOr), U: new Float64Array(nm), V: new Float64Array(nm) };
+      for (let k = 0; k < Nb; k++) pt.dphiT[k] = phR[k] * g.c + phZ[k] * g.sn;
+      for (let m = 0; m < nm; m++) {
+        modeAt(dry[m], s, fld); pt.U[m] = fld.U; pt.V[m] = fld.V;
+        const f = Math.PI * ws * fld.W * r, bm = bvec[m];
+        for (let k = 0; k < Nb; k++) bm[k] += f * phi[k];
+      }
+      wall.push(pt);
+    }
+    const cvec = bvec.map(b => cholSolve(LA, b));
+    const Mf = mat(nm, nm);
+    for (let i = 0; i < nm; i++) for (let j = 0; j < nm; j++) { let s = 0; for (let k = 0; k < Nb; k++) s += bvec[i][k] * cvec[j][k]; Mf[i][j] = s; }
+    for (let i = 0; i < nm; i++) for (let j = 0; j < i; j++) { const a = 0.5 * (Mf[i][j] + Mf[j][i]); Mf[i][j] = a; Mf[j][i] = a; }
+    // slip-velocity fields (fluid tangential velocity minus wall velocity) per dry mode at wall points
+    for (const pt of wall) {
+      pt.fs = new Float64Array(nm); pt.ft = new Float64Array(nm);
+      for (let m = 0; m < nm; m++) {
+        let a = 0, b = 0; const c = cvec[m];
+        for (let k = 0; k < Nb; k++) { a += c[k] * pt.dphiT[k]; b += c[k] * pt.phOr[k]; }
+        pt.fs[m] = a - pt.U[m]; pt.ft[m] = -n * b - pt.V[m];
+      }
+      delete pt.phi; delete pt.dphiT; delete pt.phOr;
+    }
+    return { Mf, wall, sH, vol };
+  }
+
+  // ------------------------------------------------------------- materials
+  const MATERIALS = {
+    leadCrystal: { name: 'Lead crystal (24–30% PbO)', E: 58e9, rho: 3050, nu: 0.23, eta: 2.5e-4 },
+    sodaLime: { name: 'Soda-lime glass', E: 72e9, rho: 2500, nu: 0.22, eta: 1.0e-3 },
+    borosilicate: { name: 'Borosilicate', E: 64e9, rho: 2230, nu: 0.20, eta: 5.0e-4 },
+    fusedQuartz: { name: 'Fused quartz', E: 72.5e9, rho: 2200, nu: 0.17, eta: 4.0e-6 },
+  };
+  const SHAPES = {
+    bordeaux: { name: 'Bordeaux', P: [[4.5, 0], [42, 0], [52, 62], [36, 102]] },
+    burgundy: { name: 'Burgundy balloon', P: [[4.5, 0], [58, 0], [64, 70], [40, 100]] },
+    tulip: { name: 'Tulip (flared rim)', P: [[4.5, 0], [40, 0], [26, 70], [38, 108]] },
+    snifter: { name: 'Brandy snifter', P: [[4.5, 0], [62, 0], [70, 78], [31, 102]] },
+    flute: { name: 'Champagne flute', P: [[3.5, 0], [18, 0], [27, 85], [25, 165]] },
+  };
+  const AIR = { rho: 1.204, c: 343.2 };
+  const WATER = { rho: 998, nu: 1.0e-6 };
+
+  // ----------------------------------------------------------- top level
+  // Build dry modal model of the glass (expensive; on shape/material change)
+  function buildGlass(cfg) {
+    const shape = SHAPES[cfg.shape] || SHAPES.bordeaux, m = MATERIALS[cfg.material] || MATERIALS.leadCrystal;
+    const tRim = cfg.tRim || 1.2e-3, tBase = tRim * (cfg.baseRatio || 2.4);
+    const geo = makeGeometry(shape.P, cfg.scale || 1, tRim, tBase);
+    const orders = cfg.orders || [2, 3, 4, 5, 6], byN = {};
+    for (const n of orders) byN[n] = shellModes(geo, m, n, { Ne: cfg.Ne || 36, nKeep: cfg.nKeep || 8 });
+    return { cfg, geo, mat: m, shape, byN, orders };
+  }
+
+  // Wet modes + losses for a fill fraction (cheap; live while dragging)
+  function wetModes(glass, fill, opts) {
+    opts = opts || {};
+    const { geo, mat: m } = glass, fmax = opts.fmax || 15000, perN = opts.perN || 3, listenerR = opts.listenerR || 0.5;
+    const h = geo.zFloor + fill * (geo.zRimIn - geo.zFloor);
+    const out = []; let vol = 0, sH = 0;
+    const qs = GL(4), NS = 30, fld = {};
+    for (const n of (opts.orders || glass.orders)) {
+      const dry = glass.byN[n], nm = dry.length;
+      const liq = fill > 0.003 ? liquidCoupling(geo, n, dry, h) : null;
+      if (liq) { vol = liq.vol; sH = liq.sH; }
+      let modes;
+      if (liq) {
+        const Kr = mat(nm, nm), Mr = mat(nm, nm);
+        for (let i = 0; i < nm; i++) { Kr[i][i] = dry[i].omega * dry[i].omega; for (let j = 0; j < nm; j++) Mr[i][j] = (i === j ? 1 : 0) + WATER.rho * liq.Mf[i][j]; }
+        modes = genEig(Kr, Mr, nm).map(s => ({ omega: Math.sqrt(s.lambda), X: s.x }));
+      } else modes = dry.map((d, i) => { const X = new Float64Array(nm); X[i] = 1; return { omega: d.omega, X }; });
+      const dryOmega = dry.map(d => d.omega);
+      let count = 0;
+      for (let j = 0; j < modes.length && count < perN; j++) {
+        const { omega, X } = modes[j], f = omega / (2 * Math.PI);
+        if (f > fmax) break;
+        // fields of the wet mode at rim, waterline; radiation integral over outer surface
+        const comb = s => { let U = 0, V = 0, W = 0; for (let i = 0; i < nm; i++) { modeAt(dry[i], s, fld); U += X[i] * fld.U; V += X[i] * fld.V; W += X[i] * fld.W; } return { U, V, W }; };
+        const rim = comb(geo.L), gR = geo.rim;
+        const rimR = rim.U * gR.c + rim.W * gR.sn, rimA = rim.U * gR.sn - rim.W * gR.c;
+        const kAir = omega / AIR.c;
+        let cRad = 0;
+        for (let is = 0; is < NS; is++) for (let a = 0; a < qs.x.length; a++) {
+          const s = geo.L * (is + 0.5 * (qs.x[a] + 1)) / NS, ws = geo.L * 0.5 * qs.w[a] / NS, g = geo.at(s), F = comb(s);
+          const ro = g.r + 0.5 * g.t * g.sn, vr = F.W * g.sn + F.U * g.c;
+          cRad += Math.PI * ws * radResistance(n, kAir * ro, AIR.rho * AIR.c) * vr * vr * ro * g.sn; // strip of height ds*sin(psi)
+        }
+        let cVis = 0;
+        if (liq) {
+          let I = 0;
+          for (const pt of liq.wall) { let ds = 0, dt = 0; for (let i = 0; i < nm; i++) { ds += X[i] * pt.fs[i]; dt += X[i] * pt.ft[i]; } I += Math.PI * pt.w * (ds * ds + dt * dt) * pt.r; }
+          cVis = WATER.rho * Math.sqrt(WATER.nu * omega / 2) * I;
+        }
+        let wl = 0; if (liq) { const F = comb(sH), g = geo.at(sH); wl = F.W * g.sn + F.U * g.c; }
+        let shape = null;
+        if (opts.shapes) { const NSH = 48; shape = new Float32Array(NSH + 1); for (let i = 0; i <= NSH; i++) { const F = comb(geo.L * i / NSH); shape[i] = F.W; } }
+        const zMat = m.eta / 2, zRad = cRad / (2 * omega), zVis = cVis / (2 * omega), zSup = 1.5e-5;
+        const zeta = zMat + zRad + zVis + zSup;
+        out.push({
+          key: n + ':' + j, n, m: j, f, omega, fDry: dryOmega[j] / (2 * Math.PI),
+          zeta, Q: 1 / (2 * zeta), zMat, zRad, zVis, zSup,
+          rimV: rim.V, rimR, rimA, wl, shape,
+          G: Math.sqrt(2 * AIR.rho * AIR.c * cRad / (4 * Math.PI * listenerR * listenerR)),
+        });
+        count++;
+      }
+    }
+    return { modes: out.sort((a, b) => a.f - b.f), h, volume: vol, sH, fill };
+  }
+
+  // quick profile sampler for drawing (mm)
+  function profile(glass, N) {
+    const g = glass.geo, pts = [];
+    for (let i = 0; i <= N; i++) { const s = g.L * i / N, a = g.at(s); pts.push({ r: a.r, z: a.z, t: a.t, c: a.c, sn: a.sn }); }
+    return pts;
+  }
+
+  // ------------------------------------------------- multi-glass service (worker-friendly)
+  function makeService() {
+    const store = new Map(), baseF = new Map();
+    const strip = m => { const { shape, ...r } = m; return r; };
+    function f2(glass, fill) { const w = wetModes(glass, fill, { perN: 1, fmax: 6000, orders: [2] }); return w.modes.length ? w.modes[0].f : NaN; }
+    function build(id, cfg) {
+      const glass = buildGlass(Object.assign({ Ne: 30, nKeep: 6 }, cfg));
+      const N = 38, fills = [], hz = [];
+      for (let i = 0; i <= N; i++) { const f = 0.95 * i / N; fills.push(f); hz.push(f2(glass, f)); }
+      const G = { glass, cfg, fills, hz }; store.set(id, G); return G;
+    }
+    function info(G) { const g = G.glass.geo; return { rimR: g.rimR, rMax: g.rMaxOuter, rimT: g.rim.t, fDry: G.hz[0], fFull: G.hz[G.hz.length - 1], scale: G.cfg.scale || 1 }; }
+    function wet(G, fill) {
+      const w = wetModes(G.glass, fill, { perN: 1, fmax: 12000 }), g = G.glass.geo;
+      const m2 = w.modes.find(m => m.n === 2);
+      return { fill, modes: w.modes.map(strip), volume: w.volume, waterR: fill > 0.003 ? g.innerAtZ(w.h).r : 0, f: m2 ? m2.f : NaN };
+    }
+    function fillFor(G, hz) {
+      const H = G.hz, F = G.fills, n = H.length - 1;
+      if (hz >= H[0]) return { fill: 0, ok: hz <= H[0] * 1.003 };
+      if (hz <= H[n]) return { fill: F[n], ok: hz >= H[n] * 0.997 };
+      let i = 0; while (H[i + 1] > hz) i++;
+      let a = F[i], b = F[i + 1], fa = H[i] - hz, fb = H[i + 1] - hz, x = a + (b - a) * fa / (fa - fb);
+      for (let it = 0; it < 2; it++) {                    // secant polish against the full solve
+        const fx = f2(G.glass, x) - hz; if (Math.abs(fx) < 0.02) break;
+        if (fx > 0) { a = x; fa = fx; } else { b = x; fb = fx; }
+        x = a + (b - a) * fa / (fa - fb);
+      }
+      return { fill: x, ok: true };
+    }
+    function scaleFor(cfg, hz, ratio) {                  // shell freq ~ t/R^2, refined by actual solves
+      const key = cfg.shape + '|' + cfg.material + '|' + cfg.tRim;
+      let f1 = baseF.get(key);
+      if (!f1) { f1 = buildGlass(Object.assign({}, cfg, { scale: 1, orders: [2], Ne: 24, nKeep: 2 })).byN[2][0].omega / (2 * Math.PI); baseF.set(key, f1); }
+      const want = hz / ratio; let s = Math.sqrt(f1 / want);
+      s = Math.min(1.6, Math.max(0.5, s));
+      const fs = buildGlass(Object.assign({}, cfg, { scale: s, orders: [2], Ne: 24, nKeep: 2 })).byN[2][0].omega / (2 * Math.PI);
+      s = Math.min(1.6, Math.max(0.5, s * Math.sqrt(fs / want)));
+      return s;
+    }
+    function handle(m) {
+      switch (m.cmd) {
+        case 'build': { const G = build(m.id, m.cfg); return { id: m.id, info: info(G), wet: wet(G, m.fill || 0) }; }
+        case 'fill': { const G = store.get(m.id); return { id: m.id, wet: wet(G, m.fill) }; }
+        case 'tune': { const G = store.get(m.id), r = fillFor(G, m.hz); return { id: m.id, inRange: r.ok, wet: wet(G, r.fill) }; }
+        case 'fit': {
+          const cfg = Object.assign({}, m.cfg); cfg.scale = scaleFor(cfg, m.hz, m.ratio || 0.86);
+          const G = build(m.id, cfg), r = fillFor(G, m.hz);
+          return { id: m.id, info: info(G), inRange: r.ok, wet: wet(G, r.fill) };
+        }
+      }
+      return { id: m.id, error: 'unknown cmd' };
+    }
+    return { handle };
+  }
+
+  const api = { makeService, buildGlass, wetModes, profile, MATERIALS, SHAPES, AIR, WATER, _t: { makeGeometry, shellModes, liquidCoupling, besselJ, besselY, radResistance, genEig, symEig, modeAt, cholesky, cholSolve, GL } };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GlassPhysics = api;
+})(typeof self !== 'undefined' ? self : this);
+</script>
+<script>(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const TAU = Math.PI * 2;
+  const wrap = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12), ftom = f => 69 + 12 * Math.log2(f / 440);
+  const NOTES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+  const nn = m => NOTES[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
+  const ALPHA = 0.37, EXAG = 30, OUT_PA = 1.2, NTH = 120;
+  const SCALES = {
+    majorPent: { name: 'Major pentatonic', s: [0, 2, 4, 7, 9] }, major: { name: 'Major', s: [0, 2, 4, 5, 7, 9, 11] },
+    minorPent: { name: 'Minor pentatonic', s: [0, 3, 5, 7, 10] }, minor: { name: 'Natural minor', s: [0, 2, 3, 5, 7, 8, 10] },
+    wholeTone: { name: 'Whole tone', s: [0, 2, 4, 6, 8, 10] }, chromatic: { name: 'Chromatic', s: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+  };
+  const SHAPES = { bordeaux: 'Bordeaux', burgundy: 'Burgundy balloon', tulip: 'Tulip (flared rim)', snifter: 'Brandy snifter', flute: 'Champagne flute' };
+  const MATERIALS = { leadCrystal: 'Lead crystal', sodaLime: 'Soda-lime glass', borosilicate: 'Borosilicate', fusedQuartz: 'Fused quartz' };
+  const S = { count: 6, root: 72, scale: 'majorPent', material: 'leadCrystal', tRim: 1.2e-3, FN: 1.0, cond: 'wet', reverb: 0.3, vol: 0.8, autorub: false };
+
+  // ------------------------------------------------------------ physics service (Web Worker)
+  const physSrc = $('phys-src').textContent;
+  const svc = (() => {
+    let worker = null, local = null, n = 0; const pending = new Map();
+    const useLocal = () => {
+      if (!local) { if (!window.GlassPhysics) (new Function(physSrc))(); local = window.GlassPhysics.makeService(); }
+      worker = null; for (const [req, p] of pending) { pending.delete(req); setTimeout(() => p.res(local.handle(p.m)), 0); }
+    };
+    try {
+      const code = physSrc + '\nconst S = GlassPhysics.makeService(); onmessage = e => { const m = e.data; let r; try { r = S.handle(m); } catch (err) { r = { id: m.id, error: String(err) }; } r.req = m.req; postMessage(r); };';
+      worker = new Worker(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })));
+      worker.onmessage = e => { const p = pending.get(e.data.req); if (p) { pending.delete(e.data.req); p.res(e.data); } };
+      worker.onerror = e => { console.warn('physics worker failed; running on main thread', e.message); useLocal(); };
+    } catch (e) { console.warn('no worker', e); }
+    return {
+      call(m) {
+        return new Promise(res => {
+          m.req = ++n;
+          if (worker) { pending.set(m.req, { res, m }); worker.postMessage(m); }
+          else { if (!local) useLocal(); setTimeout(() => res(local.handle(m)), 0); }
+        });
+      },
+    };
+  })();
+
+  // ------------------------------------------------------------ glasses
+  let glasses = [];
+  function newGlass(i) { return { id: i, shape: 'bordeaux', scale: 1, fill: 0, midi: 72, info: null, modes: [], f: NaN, waterR: 0, waterRD: 0, inRange: true, held: null, touch: null, lastUse: 0, seq: 0, modeByKey: new Map(), snap: null, keyRub: false, glow: 0 }; }
+  let busyN = 0;
+  function busy(d, msg) { busyN += d; $('busy').classList.toggle('on', busyN > 0); if (msg) $('busyMsg').textContent = msg; }
+  function applyWet(g, r) {
+    if (r.error) { console.warn(r.error); return; }
+    if (r.info) g.info = r.info, g.scale = r.info.scale;
+    if (r.inRange != null) g.inRange = r.inRange;
+    const w = r.wet; g.fill = w.fill; g.modes = w.modes; g.f = w.f; g.waterR = w.waterR; g.volume = w.volume;
+    g.modeByKey = new Map(w.modes.map(m => [m.key, m]));
+    sendModes(g); layoutKeys(); if (g === edG) refreshEditor();
+  }
+  async function fit(g) {
+    const seq = ++g.seq; busy(1, 'Sizing glasses & pouring…');
+    const r = await svc.call({ cmd: 'fit', id: g.id, hz: mtof(g.midi), cfg: { shape: g.shape, material: S.material, tRim: S.tRim } });
+    busy(-1); if (seq === g.seq) applyWet(g, r);
+  }
+  async function rebuild(g) {
+    const seq = ++g.seq; busy(1, 'Solving shell…');
+    const r = await svc.call({ cmd: 'build', id: g.id, fill: g.fill, cfg: { shape: g.shape, material: S.material, tRim: S.tRim, scale: g.scale } });
+    busy(-1); if (seq === g.seq) applyWet(g, r);
+  }
+  async function pourTo(g, hz) {               // keep size, change water only
+    if (!g.info) return;
+    const seq = ++g.seq;
+    const r = await svc.call({ cmd: 'tune', id: g.id, hz });
+    if (seq === g.seq) applyWet(g, r);
+  }
+  async function setFillManual(g, fill) {
+    const seq = ++g.seq;
+    const r = await svc.call({ cmd: 'fill', id: g.id, fill });
+    if (seq === g.seq) { applyWet(g, r); g.midi = Math.round(ftom(g.f)); }
+  }
+  function scaleNotes(root, sc, count) {
+    const s = SCALES[sc].s, out = [];
+    for (let i = 0; out.length < count; i++) out.push(root + 12 * Math.floor(i / s.length) + s[i % s.length]);
+    return out;
+  }
+  async function tuneToScale() {
+    const notes = scaleNotes(S.root, S.scale, glasses.length);
+    glasses.forEach((g, i) => { g.midi = notes[i]; });
+    for (const g of glasses) await fit(g);
+  }
+  async function spreadForKeys() {
+    glasses.forEach((g, i) => { g.midi = Math.max(48, Math.min(96, S.root - 12 + 7 * i)); });
+    for (const g of glasses) await fit(g);
+  }
+  function setCount(n) {
+    S.count = n;
+    for (const g of glasses) if (g.touch != null || g.held != null) { send({ t: 'finger', i: g.id, f: { down: false } }); }
+    glasses = Array.from({ length: n }, (_, i) => glasses[i] || newGlass(i));
+    send({ t: 'count', n });
+    glasses.forEach(g => send({ t: 'pan', i: g.id, p: 0 }));
+    layout();
+    tuneToScale();
+  }
+
+  // ------------------------------------------------------------ audio
+  let audio = null;
+  const BANK = `
+class GlassBank extends AudioWorkletProcessor {
+  constructor() { super(); this.voices = []; this.pan = []; this.g = 1; this.k = 0; this.tL = new Float32Array(128); this.tR = new Float32Array(128);
+    this.port.onmessage = e => { const m = e.data;
+      if (m.t === 'count') { while (this.voices.length < m.n) { const v = new globalThis.GlassDSP.GlassVoice(sampleRate, { os: 2 }); v.gain = this.g; this.voices.push(v); this.pan.push(0); } this.voices.length = m.n; this.pan.length = m.n; return; }
+      if (m.t === 'gain') { this.g = m.g; for (const v of this.voices) v.gain = m.g; return; }
+      const v = this.voices[m.i]; if (!v) return;
+      if (m.t === 'modes') v.setModes(m.modes, m.opt); else if (m.t === 'finger') v.setFinger(m.f); else if (m.t === 'tap') v.tap(m.theta, m.force); else if (m.t === 'pan') this.pan[m.i] = m.p; }; }
+  process(inp, out) {
+    const o = out[0], L = o[0], R = o[1] || o[0], n = L.length; L.fill(0); if (R !== L) R.fill(0);
+    if (this.tL.length !== n) { this.tL = new Float32Array(n); this.tR = new Float32Array(n); }
+    for (let i = 0; i < this.voices.length; i++) { const v = this.voices[i]; if (v.quiet()) continue;
+      v.process(this.tL, this.tR, n); const a = (this.pan[i] + 1) * Math.PI / 4, gl = Math.cos(a) * 1.4142, gr = Math.sin(a) * 1.4142;
+      for (let k = 0; k < n; k++) { L[k] += this.tL[k] * gl; R[k] += this.tR[k] * gr; } }
+    if (++this.k % 5 === 0) this.port.postMessage(this.voices.map(v => v.snapshot()));
+    return true; }
+}
+registerProcessor('glass-bank', GlassBank);`;
+  function send(m) { if (audio) audio.send(m); }
+  function sendModes(g) { if (g.modes.length) send({ t: 'modes', i: g.id, modes: g.modes, opt: { split: 3e-4, alpha: ALPHA, Rrim: g.info ? g.info.rimR : 0.036 } }); }
+  function makeIR(ctx, secs) {
+    const sr = ctx.sampleRate, n = Math.floor(sr * secs), b = ctx.createBuffer(2, n, sr);
+    for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); let lp = 0;
+      for (let i = 0; i < n; i++) { const t = i / sr, k = Math.min(0.92, 0.2 + t * 0.9); lp = lp * k + (Math.random() * 2 - 1) * (1 - k); d[i] = lp * Math.exp(-6.9 * t / secs) * (t < 0.012 ? 0 : 1) * 2.2; }
+      for (const [dt, a] of [[0.013, 0.5], [0.021, 0.35], [0.034, 0.25], [0.047, 0.2]]) { const j = Math.floor((dt + c * 0.003) * sr); if (j < n) d[j] += a; } }
+    return b;
+  }
+  async function startAudio() {
+    if (audio) { if (audio.ctx.state !== 'running') audio.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext, ctx = new AC({ latencyHint: 'interactive' });
+    const queue = []; audio = { ctx, send: m => queue.push(m) }; ctx.resume();
+    const src = $('dsp-src').textContent;
+    const master = ctx.createGain(), comp = ctx.createDynamicsCompressor(), dry = ctx.createGain(), wetG = ctx.createGain(), conv = ctx.createConvolver();
+    comp.threshold.value = -8; comp.knee.value = 6; comp.ratio.value = 10; comp.attack.value = 0.002; comp.release.value = 0.2;
+    conv.buffer = makeIR(ctx, 2.4);
+    dry.connect(comp); conv.connect(wetG); wetG.connect(comp); comp.connect(master); master.connect(ctx.destination);
+    Object.assign(audio, { master, dry, wetG });
+    let node;
+    try {
+      await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([src + '\n' + BANK], { type: 'application/javascript' })));
+      node = new AudioWorkletNode(ctx, 'glass-bank', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
+      node.port.onmessage = e => onSnap(e.data);
+      audio.send = m => node.port.postMessage(m);
+    } catch (err) {
+      console.warn('AudioWorklet unavailable, using ScriptProcessor', err);
+      if (!window.GlassDSP) (new Function(src))();
+      const voices = [], pan = []; let g = 1;
+      node = ctx.createScriptProcessor(512, 0, 2);
+      const tL = new Float32Array(512), tR = new Float32Array(512);
+      node.onaudioprocess = e => {
+        const L = e.outputBuffer.getChannelData(0), R = e.outputBuffer.getChannelData(1); L.fill(0); R.fill(0);
+        voices.forEach((v, i) => { if (v.quiet()) return; v.process(tL, tR, 512); const a = (pan[i] + 1) * Math.PI / 4; for (let k = 0; k < 512; k++) { L[k] += tL[k] * Math.cos(a) * 1.414; R[k] += tR[k] * Math.sin(a) * 1.414; } });
+        onSnap(voices.map(v => v.snapshot()));
+      };
+      audio.send = m => {
+        if (m.t === 'count') { while (voices.length < m.n) { const v = new window.GlassDSP.GlassVoice(ctx.sampleRate, { os: 2 }); v.gain = g; voices.push(v); pan.push(0); } voices.length = m.n; pan.length = m.n; return; }
+        if (m.t === 'gain') { g = m.g; voices.forEach(v => v.gain = g); return; }
+        const v = voices[m.i]; if (!v) return;
+        if (m.t === 'modes') v.setModes(m.modes, m.opt); else if (m.t === 'finger') v.setFinger(m.f); else if (m.t === 'tap') v.tap(m.theta, m.force); else if (m.t === 'pan') pan[m.i] = m.p;
+      };
+    }
+    node.connect(dry); node.connect(conv);
+    applyMix();
+    send({ t: 'count', n: glasses.length }); send({ t: 'gain', g: 1 / OUT_PA });
+    glasses.forEach(g => { send({ t: 'finger', i: g.id, f: { FN: S.FN, cond: S.cond } }); sendModes(g); });
+    layout();
+    for (const m of queue) if (m.t !== 'count' && m.t !== 'gain') audio.send(m);
+  }
+  function applyMix() {
+    if (!audio || !audio.master) return; const t = audio.ctx.currentTime;
+    audio.master.gain.setTargetAtTime(S.vol * S.vol * 1.4, t, 0.03);
+    audio.dry.gain.setTargetAtTime(1 - 0.55 * S.reverb, t, 0.03);
+    audio.wetG.gain.setTargetAtTime(0.9 * S.reverb, t, 0.03);
+  }
+  function onSnap(arr) { arr.forEach((s, i) => { if (glasses[i]) glasses[i].snap = s; }); }
+
+  // ------------------------------------------------------------ layout + drawing
+  const stage = $('stage'), sc = stage.getContext('2d');
+  let W = 0, H = 0, dpr = 1, pxPerM = 1000;
+  function resize() {
+    dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    for (const cv of [stage, $('keys')]) { const r = cv.getBoundingClientRect(); cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+    const r = stage.getBoundingClientRect(); W = r.width; H = r.height; layout(); layoutKeys();
+  }
+  new ResizeObserver(resize).observe(document.body);
+  function layout() {
+    const N = glasses.length; if (!N || !W) return;
+    let best = null;
+    for (let c = 1; c <= N; c++) { const rows = Math.ceil(N / c), cw = W / c, ch = H / rows, s = Math.min(cw, ch / 1.12); if (!best || s > best.s) best = { c, rows, cw, ch, s }; }
+    const { c, rows, cw, ch } = best;
+    const labH = 50;
+    let maxR = 0; for (const g of glasses) if (g.info) maxR = Math.max(maxR, g.info.rMax, g.info.rimR * 1.12);
+    const allow = Math.min(cw * 0.44, (ch - labH) * 0.47);
+    if (maxR) pxPerM = allow / maxR;
+    glasses.forEach((g, i) => {
+      const row = Math.floor(i / c), inRow = Math.min(c, N - row * c), col = i - row * c;
+      const x0 = (W - inRow * cw) / 2 + col * cw;
+      g.cx = x0 + cw / 2; g.cy = row * ch + (ch - labH) * 0.5 + (H - rows * ch) / 2; g.cellH = ch; g.cellW = cw;
+      g.R = g.info ? g.info.rimR * pxPerM : allow * 0.8;
+      g.labelY = g.cy + (g.info ? Math.max(g.info.rMax, g.info.rimR) * pxPerM : allow) + Math.max(22, Math.min(34, cw * 0.09));
+      const p = W > 0 ? ((g.cx / W) * 2 - 1) * 0.75 : 0;
+      if (g.pan !== p) { g.pan = p; send({ t: 'pan', i: g.id, p }); }
+    });
+  }
+  const envR = new Float64Array(NTH), dispR = new Float64Array(NTH), envW = new Float64Array(NTH);
+  let strobe = 0;
+  function analyse(g) {
+    envR.fill(0); dispR.fill(0); envW.fill(0);
+    const s = g.snap; let rimMax = 0, prms = 0;
+    if (!s || !s.keys) return { rimMax, prms };
+    prms = s.prms || 0;
+    const pairs = new Map();
+    for (let k = 0; k < s.keys.length; k++) {
+      const key = s.keys[k], base = key.slice(0, -1), m = g.modeByKey.get(base); if (!m) continue;
+      let p = pairs.get(base); if (!p) { p = { m, a: [0, 0], b: [0, 0] }; pairs.set(base, p); }
+      const z = [s.amps[2 * k], s.amps[2 * k + 1]]; if (key.endsWith('B')) p.b = z; else p.a = z;
+    }
+    const cs = Math.cos(strobe), sn = Math.sin(strobe);
+    for (const { m, a, b } of pairs.values()) {
+      if (Math.hypot(a[0], a[1], b[0], b[1]) * Math.abs(m.rimR) < 2e-8) continue;
+      for (let i = 0; i < NTH; i++) {
+        const th = TAU * i / NTH - ALPHA, c = Math.cos(m.n * th), s2 = Math.sin(m.n * th);
+        const re = a[0] * c + b[0] * s2, im = a[1] * c + b[1] * s2;
+        const xr = m.rimR * re, xi = m.rimR * im; envR[i] += xr * xr + xi * xi; dispR[i] += xr * cs - xi * sn;
+        const wr = m.wl * re, wi = m.wl * im; envW[i] += wr * wr + wi * wi;
+      }
+    }
+    for (let i = 0; i < NTH; i++) { envR[i] = Math.sqrt(envR[i]); envW[i] = Math.sqrt(envW[i]); rimMax = Math.max(rimMax, envR[i]); }
+    return { rimMax, prms };
+  }
+  function drawGlass(g, now, dt) {
+    const c = sc, R = g.R, cx = g.cx, cy = g.cy, an = analyse(g);
+    const tr = g.info ? Math.max(1.5, g.info.rimT * pxPerM) : 2;
+    g.glow += (Math.min(1, Math.max(0, (20 * Math.log10(Math.max(1e-7, an.prms) / 2e-5) - 40) / 35)) - g.glow) * Math.min(1, dt * 8);
+    // selection / playing glow
+    if (g.glow > 0.02) { const gg = c.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.6); gg.addColorStop(0, `rgba(159,211,255,${0.18 * g.glow})`); gg.addColorStop(1, 'rgba(159,211,255,0)'); c.fillStyle = gg; c.beginPath(); c.arc(cx, cy, R * 1.6, 0, TAU); c.fill(); }
+    const sh = c.createRadialGradient(cx + 6, cy + 10, R * 0.2, cx + 6, cy + 10, R * 1.4); sh.addColorStop(0, 'rgba(0,0,0,.45)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = sh; c.beginPath(); c.arc(cx + 6, cy + 10, R * 1.4, 0, TAU); c.fill();
+    if (g.info) {
+      const bR = g.info.rMax * pxPerM;
+      if (bR > R + 2) { c.strokeStyle = 'rgba(220,235,255,.18)'; c.lineWidth = 1; c.beginPath(); c.arc(cx, cy, bR, 0, TAU); c.stroke(); }
+      const fR = 0.039 * g.scale * pxPerM; c.strokeStyle = 'rgba(200,220,245,.07)'; c.beginPath(); c.arc(cx, cy, fR, 0, TAU); c.stroke();
+    }
+    const ig = c.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.05, cx, cy, R);
+    ig.addColorStop(0, 'rgba(230,240,255,.07)'); ig.addColorStop(1, 'rgba(200,220,255,.11)');
+    c.fillStyle = ig; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
+    // water (animated pour)
+    g.waterRD += ((g.fill > 0.003 ? g.waterR : 0) * pxPerM - g.waterRD) * Math.min(1, dt * 10);
+    const wR = g.waterRD;
+    if (wR > 1) {
+      const wg = c.createRadialGradient(cx - wR * 0.25, cy - wR * 0.3, wR * 0.1, cx, cy, wR);
+      wg.addColorStop(0, 'rgba(90,180,230,.30)'); wg.addColorStop(0.8, 'rgba(40,120,180,.30)'); wg.addColorStop(1, 'rgba(120,200,240,.55)');
+      c.fillStyle = wg; c.beginPath(); c.arc(cx, cy, wR, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(170,225,255,.55)'; c.lineWidth = 1; c.beginPath(); c.arc(cx, cy, wR - 0.5, 0, TAU); c.stroke();
+      // ripples near antinodes
+      const t = now / 1000, lam = Math.max(2, 0.0016 * pxPerM);
+      for (let s = 0; s < NTH; s += 2) {
+        const st = Math.min(1, envW[s] / 6e-6); if (st < 0.04) continue;
+        const th0 = TAU * s / NTH, th1 = TAU * (s + 2) / NTH;
+        for (let k = 0; k < 6; k++) { const r = wR - 1.5 - k * lam; if (r < 3) break;
+          c.strokeStyle = `rgba(200,240,255,${0.4 * st * Math.exp(-k / (1.4 + 3 * st)) * (0.55 + 0.45 * Math.sin(TAU * (t * 9 - k * 0.5) + s * 0.35))})`;
+          c.beginPath(); c.arc(cx, cy, r, th0, th1); c.stroke(); }
+      }
+    }
+    // envelope + rim
+    const X = EXAG * pxPerM, lim = 0.16 * R;
+    if (an.rimMax * X > 0.3) {
+      c.fillStyle = 'rgba(159,211,255,.13)'; c.beginPath();
+      for (let i = 0; i <= NTH; i++) { const k = i % NTH, th = TAU * k / NTH, r = R + tr / 2 + lim * Math.tanh(envR[k] * X / lim); i ? c.lineTo(cx + r * Math.cos(th), cy + r * Math.sin(th)) : c.moveTo(cx + r * Math.cos(th), cy + r * Math.sin(th)); }
+      for (let i = NTH; i >= 0; i--) { const k = i % NTH, th = TAU * k / NTH, r = R - tr / 2 - lim * Math.tanh(envR[k] * X / lim); i === NTH ? c.moveTo(cx + r * Math.cos(th), cy + r * Math.sin(th)) : c.lineTo(cx + r * Math.cos(th), cy + r * Math.sin(th)); }
+      c.fill('evenodd');
+    }
+    c.beginPath();
+    for (let i = 0; i <= NTH; i++) { const k = i % NTH, th = TAU * k / NTH, r = R + lim * Math.tanh(dispR[k] * X / lim); i ? c.lineTo(cx + r * Math.cos(th), cy + r * Math.sin(th)) : c.moveTo(cx + r * Math.cos(th), cy + r * Math.sin(th)); }
+    c.lineJoin = 'round';
+    c.strokeStyle = 'rgba(225,238,255,.2)'; c.lineWidth = Math.max(3, tr * 1.6); c.stroke();
+    c.strokeStyle = g === edG ? 'rgba(242,195,139,.95)' : 'rgba(240,248,255,.85)'; c.lineWidth = Math.max(1.3, tr * 0.7); c.stroke();
+    // finger (touch or virtual armonica finger)
+    if (g.snap && g.snap.down) {
+      const fd = g.snap.theta, fx = cx + R * Math.cos(fd), fy = cy + R * Math.sin(fd), fr = Math.max(12, 0.0075 * pxPerM);
+      const fg = c.createRadialGradient(fx - fr * 0.3, fy - fr * 0.3, fr * 0.1, fx, fy, fr);
+      fg.addColorStop(0, g.touch != null ? 'rgba(246,214,190,.55)' : 'rgba(190,220,250,.45)'); fg.addColorStop(1, g.touch != null ? 'rgba(220,170,140,.22)' : 'rgba(140,180,230,.18)');
+      c.fillStyle = fg; c.beginPath(); c.arc(fx, fy, fr, 0, TAU); c.fill();
+    }
+    // label
+    const ly = g.labelY;
+    c.textAlign = 'center';
+    c.fillStyle = g.held != null ? '#9fd3ff' : '#e8edf3';
+    c.font = `300 ${Math.max(18, Math.min(30, g.cellW * 0.09))}px Fraunces, Georgia, serif`;
+    c.fillText(isFinite(g.f) ? nn(ftom(g.f)) : '…', cx, ly);
+    c.font = '11px "IBM Plex Mono", monospace';
+    if (isFinite(g.f)) {
+      const cents = Math.round((ftom(g.f) - Math.round(ftom(g.f))) * 100);
+      c.fillStyle = g.inRange ? '#8794a6' : '#f2c38b';
+      c.fillText(`${g.f.toFixed(1)} Hz ${cents >= 0 ? '+' : '−'}${Math.abs(cents)}¢ · ${Math.round(g.fill * 100)}%${g.inRange ? '' : ' · out of range'}`, cx, ly + 16);
+    }
+    g.labelBox = { x: cx - g.cellW * 0.4, y: ly - 30, w: g.cellW * 0.8, h: 52 };
+  }
+
+  // ------------------------------------------------------------ stage touch (multi-touch)
+  const touches = new Map();
+  let started = false;
+  function hit(x, y) {
+    for (const g of glasses) {
+      const d = Math.hypot(x - g.cx, y - g.cy), tol = Math.max(0.22 * g.R, 22);
+      if (d <= g.R + tol) return { g, d, inner: d < g.R - tol, th: Math.atan2(y - g.cy, x - g.cx) };
+      const b = g.labelBox; if (b && x > b.x && x < b.x + b.w && y > b.y && y < b.y + b.h) return { g, label: true };
+    }
+    return null;
+  }
+  function pos(e, el) { const r = el.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  stage.addEventListener('pointerdown', e => {
+    e.preventDefault(); startAudio();
+    if (!started) { started = true; $('hint').classList.add('gone'); }
+    const p = pos(e, stage), h = hit(p.x, p.y); if (!h) return;
+    if (h.label) { openEditor(h.g); return; }
+    const g = h.g;
+    if (h.inner) { send({ t: 'tap', i: g.id, theta: h.th, force: 4 + 6 * Math.min(1, h.d / g.R) }); return; }
+    if (g.touch != null) return;
+    stage.setPointerCapture(e.pointerId);
+    g.touch = e.pointerId; g.lastUse = performance.now();
+    touches.set(e.pointerId, { g, lastTh: h.th, theta: h.th, lastT: e.timeStamp, omega: 0 });
+    send({ t: 'finger', i: g.id, f: { down: true, theta: h.th, omega: 0, FN: S.FN, cond: S.cond } });
+  }, { passive: false });
+  stage.addEventListener('pointermove', e => {
+    const T = touches.get(e.pointerId); if (!T) return;
+    let evs = e.getCoalescedEvents ? e.getCoalescedEvents() : null; if (!evs || !evs.length) evs = [e];
+    for (const ev of evs) {
+      const p = pos(ev, stage), th = Math.atan2(p.y - T.g.cy, p.x - T.g.cx), dt = Math.max(1, ev.timeStamp - T.lastT) / 1000, d = wrap(th - T.lastTh);
+      T.omega += (d / dt - T.omega) * (1 - Math.exp(-dt / 0.045)); T.theta += d; T.lastTh = th; T.lastT = ev.timeStamp;
+    }
+    send({ t: 'finger', i: T.g.id, f: { theta: T.theta, omega: T.omega } });
+  });
+  function endTouch(e) {
+    const T = touches.get(e.pointerId); if (!T) return; touches.delete(e.pointerId);
+    T.g.touch = null;
+    if (T.g.keyRub) startKeyRub(T.g, T.g.keyFN); else send({ t: 'finger', i: T.g.id, f: { down: false } });
+  }
+  stage.addEventListener('pointerup', endTouch); stage.addEventListener('pointercancel', endTouch);
+  document.addEventListener('gesturestart', e => e.preventDefault());
+
+  // ------------------------------------------------------------ keys (on-screen + MIDI)
+  const kc = $('keys'), kctx = kc.getContext('2d');
+  let kLo = 60, kHi = 84, keyRects = [];
+  const held = new Map();          // midi -> glass
+  function layoutKeys() {
+    let lo = Infinity, hi = -Infinity;
+    for (const g of glasses) if (g.info) { lo = Math.min(lo, Math.ceil(ftom(g.info.fFull))); hi = Math.max(hi, Math.floor(ftom(g.info.fDry))); }
+    if (!isFinite(lo)) return;
+    while ([1, 3, 6, 8, 10].includes(((lo % 12) + 12) % 12)) lo--;
+    while ([1, 3, 6, 8, 10].includes(((hi % 12) + 12) % 12)) hi++;
+    kLo = lo; kHi = hi;
+    const w = kc.width / dpr, h = kc.height / dpr, whites = [];
+    for (let m = lo; m <= hi; m++) if (![1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12)) whites.push(m);
+    const ww = w / whites.length; keyRects = [];
+    whites.forEach((m, i) => keyRects.push({ m, x: i * ww, y: 0, w: ww, h, black: false }));
+    for (let m = lo; m <= hi; m++) if ([1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12)) { const i = whites.indexOf(m - 1); if (i >= 0) keyRects.push({ m, x: (i + 1) * ww - ww * 0.32, y: 0, w: ww * 0.64, h: h * 0.6, black: true }); }
+  }
+  function inRangeAny(m) { const hz = mtof(m); return glasses.some(g => g.info && hz <= g.info.fDry * 1.003 && hz >= g.info.fFull * 0.997); }
+  function drawKeys() {
+    const c = kctx, w = kc.width / dpr, h = kc.height / dpr; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+    for (const k of keyRects.filter(k => !k.black).concat(keyRects.filter(k => k.black))) {
+      const on = held.has(k.m), ok = inRangeAny(k.m);
+      c.fillStyle = k.black ? (on ? '#3b6f99' : ok ? '#1a212c' : '#10141a') : (on ? '#9fd3ff' : ok ? '#dfe7f0' : '#5b6573');
+      c.beginPath(); c.roundRect ? c.roundRect(k.x + 1, k.y, k.w - 2, k.h, [0, 0, 5, 5]) : c.rect(k.x + 1, k.y, k.w - 2, k.h); c.fill();
+      if (!k.black && k.m % 12 === 0) { c.fillStyle = '#4d5a6b'; c.font = '10px "IBM Plex Mono", monospace'; c.textAlign = 'center'; c.fillText(nn(k.m), k.x + k.w / 2, h - 7); }
+    }
+    // mark the notes each glass is currently tuned to
+    for (const g of glasses) if (isFinite(g.f)) { const m = Math.round(ftom(g.f)), k = keyRects.find(r => r.m === m); if (k) { c.fillStyle = '#3aa6d8'; c.beginPath(); c.arc(k.x + k.w / 2, k.y + (k.black ? k.h - 8 : k.h - 20), 3, 0, TAU); c.fill(); } }
+  }
+  function keyAt(x, y) { for (const k of keyRects) if (k.black && x >= k.x && x <= k.x + k.w && y <= k.h) return k.m; for (const k of keyRects) if (!k.black && x >= k.x && x <= k.x + k.w) return k.m; return null; }
+  function allocate(m) {
+    const hz = mtof(m), fits = g => g.info && hz <= g.info.fDry * 1.003 && hz >= g.info.fFull * 0.997;
+    let pool = glasses.filter(g => fits(g) && g.held == null && g.touch == null);
+    if (!pool.length) pool = glasses.filter(g => fits(g) && g.held == null);
+    if (!pool.length) pool = glasses.filter(fits);
+    if (!pool.length) {        // nobody can reach it: nearest range, clamped
+      const dist = g => !g.info ? 1e9 : hz > g.info.fDry ? hz / g.info.fDry : g.info.fFull / hz;
+      pool = glasses.filter(g => g.held == null).sort((a, b) => dist(a) - dist(b)).slice(0, 1);
+      if (!pool.length) return null;
+    }
+    pool.sort((a, b) => (Math.round(ftom(b.f)) === m) - (Math.round(ftom(a.f)) === m) || a.lastUse - b.lastUse);
+    return pool[0];
+  }
+  function startKeyRub(g, FN) { send({ t: 'finger', i: g.id, f: { down: true, theta: -Math.PI / 2, omega: TAU * 1.0, FN, cond: S.cond } }); }
+  function noteOn(m, vel) {
+    startAudio(); if (!started) { started = true; $('hint').classList.add('gone'); }
+    if (held.has(m)) noteOff(m);
+    const g = allocate(m); if (!g) return;
+    if (g.held != null) held.delete(g.held);
+    g.held = m; g.lastUse = performance.now(); held.set(m, g);
+    pourTo(g, mtof(m)).then(() => { g.midi = m; });
+    if (S.autorub && g.touch == null) {
+      g.keyRub = true; g.keyFN = 0.5 + 1.6 * (vel / 127);
+      startKeyRub(g, g.keyFN);
+    }
+  }
+  function noteOff(m) {
+    const g = held.get(m); if (!g) return; held.delete(m);
+    if (g.held === m) g.held = null;
+    if (g.keyRub) { g.keyRub = false; if (g.touch == null) send({ t: 'finger', i: g.id, f: { down: false } }); }
+  }
+  const keyTouches = new Map();
+  kc.addEventListener('pointerdown', e => { e.preventDefault(); const p = pos(e, kc), m = keyAt(p.x, p.y); if (m == null) return; kc.setPointerCapture(e.pointerId); keyTouches.set(e.pointerId, m); noteOn(m, 90); }, { passive: false });
+  kc.addEventListener('pointermove', e => { if (!keyTouches.has(e.pointerId)) return; const p = pos(e, kc), m = keyAt(p.x, p.y), old = keyTouches.get(e.pointerId); if (m != null && m !== old) { noteOff(old); keyTouches.set(e.pointerId, m); noteOn(m, 90); } });
+  const keyUp = e => { const m = keyTouches.get(e.pointerId); if (m == null) return; keyTouches.delete(e.pointerId); noteOff(m); };
+  kc.addEventListener('pointerup', keyUp); kc.addEventListener('pointercancel', keyUp);
+
+  // Web MIDI (Chrome/Edge/Firefox on desktop & Android; not available in any iPad/iPhone browser)
+  (async () => {
+    const st = $('midiStat');
+    if (!navigator.requestMIDIAccess) { st.textContent = 'MIDI: not supported by this browser (use the keys)'; return; }
+    try {
+      const acc = await navigator.requestMIDIAccess();
+      const hook = () => {
+        const names = [];
+        acc.inputs.forEach(inp => { names.push(inp.name); inp.onmidimessage = ev => {
+          const [s, d1, d2] = ev.data, type = s & 0xf0;
+          if (type === 0x90 && d2 > 0) noteOn(d1, d2);
+          else if (type === 0x80 || (type === 0x90 && d2 === 0)) noteOff(d1);
+          else if (type === 0xb0 && d1 === 1) { S.FN = 0.2 + 2.8 * d2 / 127; $('press').value = S.FN; $('pressOut').textContent = S.FN.toFixed(2) + ' N'; glasses.forEach(g => send({ t: 'finger', i: g.id, f: { FN: S.FN } })); }
+        }; });
+        st.textContent = names.length ? 'MIDI: ' + names.join(', ') + ' · mod wheel = pressure' : 'MIDI: no input connected';
+        st.classList.toggle('on', names.length > 0);
+      };
+      hook(); acc.onstatechange = hook;
+    } catch (err) { st.textContent = 'MIDI: blocked here (' + (err.name || 'denied') + ')'; }
+  })();
+
+  // ------------------------------------------------------------ editor + settings
+  let edG = null;
+  const edShape = $('edShape'); for (const [k, v] of Object.entries(SHAPES)) edShape.add(new Option(v, k));
+  function openEditor(g) { edG = g; refreshEditor(); $('sheet').classList.add('on'); }
+  function refreshEditor() {
+    const g = edG; if (!g) return;
+    $('edTitle').textContent = `Glass ${g.id + 1}`;
+    $('edNote').textContent = isFinite(g.f) ? nn(ftom(g.f)) : nn(g.midi);
+    $('edHz').textContent = isFinite(g.f) ? `${g.f.toFixed(1)} Hz${g.info ? ` · range ${nn(Math.ceil(ftom(g.info.fFull)))}–${nn(Math.floor(ftom(g.info.fDry)))}` : ''}` : '—';
+    $('edFill').value = (g.fill * 100).toFixed(1); $('edFillOut').textContent = `${Math.round(g.fill * 100)}% · ${Math.round((g.volume || 0) * 1e6)} mL`;
+    $('edSize').value = Math.round(g.scale * 100); $('edSizeOut').textContent = `${Math.round(g.scale * 100)}% · Ø${g.info ? Math.round(g.info.rimR * 2000) : '—'} mm`;
+    edShape.value = g.shape;
+  }
+  $('edClose').onclick = () => { $('sheet').classList.remove('on'); edG = null; };
+  $('sheet').addEventListener('pointerdown', e => { if (e.target.id === 'sheet') { $('sheet').classList.remove('on'); edG = null; } });
+  document.querySelectorAll('.ed-note button').forEach(b => b.onclick = () => { if (!edG) return; const base = isFinite(edG.f) ? Math.round(ftom(edG.f)) : edG.midi; edG.midi = base + +b.dataset.d; fit(edG); });
+  let fillT = 0; $('edFill').oninput = e => { if (!edG) return; const g = edG, v = +e.target.value / 100; clearTimeout(fillT); fillT = setTimeout(() => setFillManual(g, v), 30); };
+  let sizeT = 0; $('edSize').oninput = e => { if (!edG) return; const g = edG; g.scale = +e.target.value / 100; $('edSizeOut').textContent = `${e.target.value}%`; clearTimeout(sizeT); sizeT = setTimeout(() => rebuild(g), 250); };
+  edShape.onchange = () => { if (!edG) return; edG.shape = edShape.value; fit(edG); };
+
+  const matSel = $('material'); for (const [k, v] of Object.entries(MATERIALS)) matSel.add(new Option(v, k));
+  const rootSel = $('root'); for (let m = 55; m <= 84; m++) rootSel.add(new Option(nn(m), m)); rootSel.value = S.root;
+  const scSel = $('scale'); for (const [k, v] of Object.entries(SCALES)) scSel.add(new Option(v.name, k)); scSel.value = S.scale;
+  $('settingsBtn').onclick = () => $('settings').classList.add('on');
+  $('setClose').onclick = () => $('settings').classList.remove('on');
+  $('settings').addEventListener('pointerdown', e => { if (e.target.id === 'settings') $('settings').classList.remove('on'); });
+  document.querySelectorAll('#count button').forEach(b => b.onclick = () => { document.querySelectorAll('#count button').forEach(x => x.classList.toggle('on', x === b)); setCount(+b.dataset.v); });
+  matSel.onchange = () => { S.material = matSel.value; glasses.forEach(g => fit(g)); };
+  rootSel.onchange = () => { S.root = +rootSel.value; };
+  scSel.onchange = () => { S.scale = scSel.value; };
+  $('tuneScale').onclick = () => { S.root = +rootSel.value; tuneToScale(); };
+  $('spread').onclick = () => { S.root = +rootSel.value; spreadForKeys(); };
+  $('press').oninput = e => { S.FN = +e.target.value; $('pressOut').textContent = S.FN.toFixed(2) + ' N'; glasses.forEach(g => send({ t: 'finger', i: g.id, f: { FN: S.FN } })); };
+  document.querySelectorAll('#cond button').forEach(b => b.onclick = () => { document.querySelectorAll('#cond button').forEach(x => x.classList.toggle('on', x === b)); S.cond = b.dataset.v; glasses.forEach(g => send({ t: 'finger', i: g.id, f: { cond: S.cond } })); });
+  $('reverb').oninput = e => { S.reverb = +e.target.value / 100; $('reverbOut').textContent = e.target.value + '%'; applyMix(); };
+  $('vol').oninput = e => { S.vol = +e.target.value / 100; $('volOut').textContent = e.target.value + '%'; applyMix(); };
+  $('autorub').onchange = e => { S.autorub = e.target.checked; };
+
+  // ------------------------------------------------------------ loop
+  let last = performance.now(), layoutDirty = 0;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now; strobe += TAU * 0.8 * dt;
+    for (const T of touches.values()) if (now - T.lastT > 40 && Math.abs(T.omega) > 1e-3) { T.omega *= Math.exp(-dt / 0.05); send({ t: 'finger', i: T.g.id, f: { theta: T.theta, omega: T.omega } }); }
+    if (now - layoutDirty > 300) { layoutDirty = now; layout(); }
+    sc.setTransform(dpr, 0, 0, dpr, 0, 0); sc.clearRect(0, 0, W, H);
+    for (const g of glasses) drawGlass(g, now, dt);
+    drawKeys();
+    requestAnimationFrame(frame);
+  }
+  window.__harp = { get glasses() { return glasses; }, get audio() { return audio; }, noteOn, noteOff, S };
+  glasses = Array.from({ length: S.count }, (_, i) => newGlass(i));
+  resize(); tuneToScale();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
