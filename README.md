@@ -2,7 +2,7 @@
 
 A physically modeled singing wine glass. Seen from above, you rub the rim with your finger or mouse and the glass sings.
 
-**Play:** https://samuelling.github.io/GlassHouse/
+**Play:** https://samuelling.github.io/Glasshouse/ (once GitHub Pages is switched on for `main` / root)
 
 Nothing is sampled, and no oscillator is told what pitch to play.
 
