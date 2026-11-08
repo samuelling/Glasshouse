@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GlassHouse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>/*CSS*/</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Glass<span>House</span></h1>
+    <p class="sub">A physically modeled singing wine glass. Wet your finger and circle the rim.</p>
+  </header>
+
+  <section class="stage">
+    <div class="topwrap">
+      <canvas id="top" aria-label="Glass seen from above. Drag around the rim to play; tap inside to flick."></canvas>
+      <div id="busy" class="busy"><div class="spin"></div><span id="busyMsg">Solving shell modes…</span></div>
+      <div id="hint" class="hint">
+        <div class="hint-in">
+          <b>Tap to wake the glass</b>
+          <span>Then drag slowly around the rim (about one lap per second, medium pressure). Tap inside the bowl to flick it.</span>
+          <small>On iPhone, turn off silent mode to hear Web Audio.</small>
+        </div>
+      </div>
+      <div class="xlabel" id="xlabel">rim motion ×80</div>
+    </div>
+    <div class="readout">
+      <div><label>Pitch</label><b id="roPitch">—</b></div>
+      <div><label>Finger speed</label><b id="roSpeed">—</b></div>
+      <div><label>Stick phase</label><b id="roStick">—</b></div>
+      <div><label>Level @50 cm</label><b id="roLevel">—</b></div>
+    </div>
+  </section>
+
+  <section class="card controls">
+    <div class="row">
+      <label for="fill">Water <em id="fillOut">0%</em></label>
+      <input id="fill" type="range" min="0" max="95" step="0.5" value="0">
+    </div>
+    <div class="row">
+      <label for="press">Finger pressure <em id="pressOut">1.0 N</em></label>
+      <input id="press" type="range" min="0.2" max="3" step="0.05" value="1.0">
+    </div>
+    <div class="row">
+      <label>Finger</label>
+      <div class="seg" id="cond">
+        <button data-v="wet" class="on">Wet &amp; clean</button>
+        <button data-v="dry">Dry</button>
+        <button data-v="oily">Oily</button>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label for="shape">Glass</label><select id="shape"></select></div>
+      <div class="row"><label for="material">Material</label><select id="material"></select></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label for="thick">Rim wall <em id="thickOut">1.20 mm</em></label><input id="thick" type="range" min="0.7" max="2.6" step="0.05" value="1.2"></div>
+      <div class="row"><label for="size">Size <em id="sizeOut">100%</em></label><input id="size" type="range" min="70" max="135" step="1" value="100"></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label for="split">Imperfection <em id="splitOut">0.030%</em></label><input id="split" type="range" min="0" max="0.2" step="0.005" value="0.03"></div>
+      <div class="row"><label for="reverb">Room <em id="reverbOut">25%</em></label><input id="reverb" type="range" min="0" max="100" step="1" value="25"></div>
+    </div>
+    <div class="row">
+      <label for="vol">Volume <em id="volOut">80%</em></label>
+      <input id="vol" type="range" min="0" max="100" step="1" value="80">
+    </div>
+  </section>
+
+  <section class="card side">
+    <div class="side-head"><h2>Cross-section</h2><span class="note">drag the waterline</span></div>
+    <canvas id="sideCv" aria-label="Glass cross-section, drag to set water level"></canvas>
+    <div class="side-head"><h2>Pitch vs. fill</h2><span class="note" id="curveNote">(2,0) mode</span></div>
+    <canvas id="curveCv"></canvas>
+  </section>
+
+  <section class="card modes">
+    <div class="side-head"><h2>Modes</h2><span class="note">wet frequency · Q · where the energy goes</span></div>
+    <table id="modeTable"><thead><tr><th>(n,m)</th><th>f wet</th><th>f dry</th><th>Q</th><th>losses</th></tr></thead><tbody></tbody></table>
+    <div class="legend"><i class="l-mat"></i>material <i class="l-rad"></i>sound radiation <i class="l-vis"></i>water boundary layer <i class="l-sup"></i>stem/support</div>
+  </section>
+
+  <details class="card how">
+    <summary>How it's modeled</summary>
+    <div class="how-body">
+      <p><b>Glass.</b> The bowl is a thin elastic shell of revolution: a Bézier meridian with wall thickness tapering from the stem to the rim. Love's strain–displacement relations give membrane and bending energy for each circumferential order <i>n</i>. These are discretized along the meridian with C¹ Hermite-cubic finite elements in all three displacements, clamped where the bowl meets the stem, and solved as a generalized eigenproblem. Nothing is hard-coded: frequency ratios, mode shapes, and how much the rim moves sideways versus radially all come from the solve. A free cylinder reproduces the ring-bending formula to within 0.3%.</p>
+      <p><b>Water.</b> The water is treated as inviscid, incompressible potential flow inside the true inner bowl shape. Its surface is a pressure-release boundary (at audio frequencies, gravity and surface tension are negligible). The added mass comes from Ritz minimization of the fluid's kinetic energy, which matches the analytic Bessel-series answer for a cylinder to within 0.4%. The wet modes are then re-solved in a basis of dry modes. That's why the pitch falls slowly at first and then steeply as the water nears the rim.</p>
+      <p><b>Losses.</b> Each mode loses energy four ways: internal friction in the glass (loss factor η of the material); sound radiation, from the exact cylindrical-harmonic radiation resistance applied strip by strip up the bowl; viscous Stokes boundary layers where the water slips along the moving wall; and a small loss through the stem.</p>
+      <p><b>Finger.</b> Your fingertip is a pad with measured shear stiffness and damping (about 1 N/mm and 1.5 N·s/m), dragged around the rim. Pad and glass meet through a velocity-weakening friction law, solved implicitly every 10 µs: they stick whenever the force needed for zero slip stays below μ·F<sub>N</sub>, and slip otherwise. The skin also damps the rim's radial and axial motion. That damping is what drags the standing wave around with your finger: the radial node locks under the fingertip. Nobody tells it what pitch to sing. The stick–slip cycle finds the (2,0) mode because that mode has the most rim motion per unit of loss. If you press too hard or move too slowly, the skin itself chatters and squeaks. Dry skin grips harder the faster it slides, so it only scuffs. An oily finger slips with almost no velocity weakening, so nothing happens.</p>
+      <p><b>Sound.</b> Each mode's radiated power, combined with its cos <i>nθ</i> directivity, gives the pressure at two virtual microphones in front of the glass (the bottom of the screen). As the pattern turns with your finger, a fixed listener hears the characteristic slow wah. A 0.03% asymmetry splits each mode pair, which produces the beating real glasses have.</p>
+    </div>
+  </details>
+  <footer>GlassHouse · material constants go in; frequencies, mode shapes, losses and the singing itself come out.</footer>
+</main>
+<script type="text/plain" id="dsp-src">/*DSP*/</script>
+<script>/*PHYSICS*/</script>
+<script>/*APP*/</script>
+</body>
+</html>
