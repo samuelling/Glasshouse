@@ -12,4 +12,5 @@ def page(template, css, app, out):
     (root / out).write_text(t)
     print(out, len(t), 'bytes')
 page('template.html', 'style.css', 'app.js', 'index.html')
+page('bowl-template.html', 'style.css', 'app.js', 'bowl.html')
 page('harp-template.html', 'harp.css', 'harp.js', 'harp.html')

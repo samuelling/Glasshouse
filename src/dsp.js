@@ -24,6 +24,17 @@
     wet:  { mu0: 0.60, d: 0.15, eps: 0.05, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
     dry:  { mu0: 0.85, d: 0.03,  eps: 0.001, beta: 0.6, Dc: 2e-6, vAge: 0.002 },
     oily: { mu0: 0.22, d: 0.004, eps: 0.003, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+    // puja sticks on bronze (rubbing the outside wall just below the rim)
+    leather: { mu0: 0.55, d: 0.12, eps: 0.04, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+    wood:    { mu0: 0.38, d: 0.07, eps: 0.04, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+  };
+
+  // puja contact mechanics: unilateral radial contact (penalty spring-dashpot), stick mass held by the hand,
+  // tangential compliance of hand+stick. Leather is soft and lossy; bare wood is stiff, so it can lose
+  // contact on every cycle once the rim amplitude exceeds the static indentation -> the rattle.
+  const PUJA = {
+    leather: { kc: 4e4, cc: 12, ms: 0.03, ch: 3, mp: 0.004, kp: 6000, cp: 4 },
+    wood:    { kc: 4e5, cc: 6,  ms: 0.03, ch: 3, mp: 0.004, kp: 6000, cp: 4 },
   };
 
   // steady-state friction: logarithmic velocity weakening (rate-and-state form) + viscous term
@@ -42,6 +53,8 @@
       this.cc0 = 3.0; this.rough = 0.01; this.ridge = 4.5e-4; this.ridgePh = 0; this.nz = 0;
       // taps
       this.tapT = -1; this.tapDur = 4e-4; this.tapF = 0; this.tapTh = 0;
+      // exciter: 'finger' (on the rim top, constant normal force) or 'puja' (radial unilateral contact)
+      this.exc = 'finger'; this.side = 1; this.pj = PUJA.leather; this.y = 0; this.yd = 0; this.Fc = 0; this.contactCount = 0; this.FcAcc = 0;
       // mics: viewer is at the bottom of the screen (theta = +pi/2), mics +-25 deg
       this.mic = [Math.PI / 2 + 0.44, Math.PI / 2 - 0.44];
       this.gain = 1 / 0.25;                            // 0.25 Pa -> full scale
@@ -93,7 +106,7 @@
       if (f.FN != null) this.FN = f.FN;
       if (f.cond) this.fr = FINGER[f.cond] || FINGER.wet;
       if (f.down != null) {
-        if (f.down && !this.down) { this.mu = muSteady(this.fr, 0); this.theta = f.theta; this.thetaT = f.theta; this.omS = 0; this.xp = 0; this.vp = 0; }
+        if (f.down && !this.down) { this.mu = muSteady(this.fr, 0); this.seatPuja = true; this.theta = f.theta; this.thetaT = f.theta; this.omS = 0; this.xp = 0; this.vp = 0; }
         this.down = f.down;
       }
       if (f.theta != null) this.thetaT = f.theta;
@@ -106,7 +119,14 @@
       if (e < 3e-6) { if (e > 0) { this.q.fill(0); this.v.fill(0); } return true; }
       return false;
     }
-    tap(theta, force) { this.tapT = 0; this.tapTh = theta; this.tapF = force || 6; }
+    tap(theta, force, dur) { this.tapT = 0; this.tapTh = theta; this.tapF = force || 6; this.tapDur = dur || 4e-4; }
+    setExciter(e) {
+      if (e.kind) this.exc = e.kind;
+      if (e.side) this.side = e.side;
+      if (e.stick && PUJA[e.stick]) { this.pj = PUJA[e.stick]; this.fr = FINGER[e.stick]; }
+      if (this.exc === 'puja') { this.mp = this.pj.mp; this.kp = this.pj.kp; this.cp = this.pj.cp; }
+      else { this.mp = 3e-5; this.kp = 1000; this.cp = 1.5; }
+    }
     damp() { this.q.fill(0); this.v.fill(0); }
 
     // shape factors for oscillator k at angle th
@@ -145,8 +165,25 @@
             else { pT[k] = aT[k] * S; pR[k] = aR[k] * C; pA[k] = aA[k] * C; }
             vr += pR[k] * v[k]; va += pA[k] * v[k]; Y += pT[k] * pT[k];
           }
-          const cc = this.down ? this.cc0 * Math.sqrt(this.FN) : 0;
-          const Fr = -cc * vr, Fa = -cc * va;
+          let Fr, Fa, FNnow = this.FN;
+          if (this.exc === 'puja') {
+            let ur = 0; for (let k = 0; k < N; k++) ur += pR[k] * q[k];
+            const P = this.pj, sd = this.side;
+            let Fc = 0;
+            if (this.down) {
+              if (this.seatPuja) { this.y = ur - sd * this.FN / P.kc; this.yd = vr; this.seatPuja = false; }
+              const del = sd * (ur - this.y), deld = sd * (vr - this.yd);
+              if (del > 0) { Fc = P.kc * del + P.cc * deld; if (Fc < 0) Fc = 0; }
+              this.yd += dt * (sd * Fc - sd * this.FN - P.ch * this.yd) / P.ms; this.y += dt * this.yd;
+              if (Fc > 0) this.contactCount++;
+              this.FcAcc += Fc;
+            }
+            this.Fc = Fc; FNnow = Fc;
+            Fr = -sd * Fc; Fa = 0;
+          } else {
+            const cc = this.down ? this.cc0 * Math.sqrt(this.FN) : 0;
+            Fr = -cc * vr; Fa = -cc * va;
+          }
           let vg = 0;
           for (let k = 0; k < N; k++) {
             let Q = pR[k] * Fr + pA[k] * Fa;
@@ -156,7 +193,7 @@
           }
           // ---- friction (implicit)
           let F = 0;
-          if (this.down && this.FN > 0) {
+          if (this.down && FNnow > 0) {
             const mp = this.mp;
             const vpS = (this.vp + dt * (-this.kp * this.xp + this.cp * this.vb) / mp) / (1 + this.cp * dt / mp);
             const vrel = vpS - vg, Z = dt * (1 / mp + Y);
@@ -164,7 +201,7 @@
             this.ridgePh += Math.abs(this.vb) * dt / this.ridge;
             this.nz = 0.97 * this.nz + 0.03 * this.rand();
             const mod = 1 + this.rough * (0.6 * Math.sin(TAU * this.ridgePh) + 4 * this.nz);
-            const FN = this.FN, muNow = this.mu * mod;
+            const FN = FNnow, muNow = this.mu * mod;
             const Fs = vrel / Z;
             let vAfter;
             if (Math.abs(Fs) <= muNow * FN) { F = Fs; vAfter = 0; this.stickCount++; }
@@ -201,11 +238,12 @@
       for (let k = 0; k < N; k++) { amps[2 * k] = this.q[k]; amps[2 * k + 1] = this.v[k] / this.om[k]; }
       const prms = Math.sqrt(this.pAcc / Math.max(1, this.pN));
       const stick = this.stepCount ? this.stickCount / this.stepCount : 0;
-      this.pAcc = 0; this.pN = 0; this.stickCount = 0; this.stepCount = 0;
-      return { keys: this.keys.slice(), amps, theta: this.theta, down: this.down, prms, stick, vb: this.vb, alpha: this.alpha };
+      const steps = this.pN * this.os, contact = this.down && steps ? this.contactCount / steps : 0, Fmean = steps ? this.FcAcc / steps : 0;
+      this.pAcc = 0; this.pN = 0; this.stickCount = 0; this.stepCount = 0; this.contactCount = 0; this.FcAcc = 0;
+      return { keys: this.keys.slice(), amps, theta: this.theta, down: this.down, prms, stick, vb: this.vb, alpha: this.alpha, contact, Fmean, y: this.y };
     }
   }
 
-  const api = { GlassVoice, FINGER };
+  const api = { GlassVoice, FINGER, PUJA };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GlassDSP = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

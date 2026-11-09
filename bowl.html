@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GlassHouse · Singing bowl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>:root{
+  --bg:#07090d; --bg2:#0d1118; --card:#10151d; --line:#1d2531; --ink:#e8edf3; --dim:#8794a6; --faint:#4d5a6b;
+  --glass:#dfe9f5; --water:#3aa6d8; --accent:#9fd3ff; --warm:#f2c38b;
+  --mat:#c9a7ff; --rad:#7fd3ff; --vis:#4fc1a8; --sup:#8794a6;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+main{max-width:760px;margin:0 auto;padding:18px 14px 40px}
+header{padding:6px 4px 12px}
+h1{font:300 34px/1 Fraunces,Georgia,serif;letter-spacing:-.01em;margin:0}
+h1 span{font-weight:500;color:var(--accent)}
+.sub{margin:6px 0 0;color:var(--dim);font-size:14px}
+h2{font:500 13px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:0}
+.stage{position:relative}
+.topwrap{position:relative;width:100%;max-width:min(100%,74vh);margin:0 auto;aspect-ratio:1/1;border-radius:22px;overflow:hidden;background:radial-gradient(120% 90% at 50% 40%,#18202b 0%,#0b0f15 60%,#06080b 100%);border:1px solid var(--line);touch-action:none;user-select:none;-webkit-user-select:none}
+#top{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#top.rubbing{cursor:grabbing}
+.xlabel{position:absolute;left:14px;bottom:12px;font:500 11px/1 "IBM Plex Mono",monospace;color:var(--faint);letter-spacing:.04em}
+.busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(7,9,13,.55);backdrop-filter:blur(2px);color:var(--dim);font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+.busy.on{opacity:1}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--faint);border-top-color:var(--accent);animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hint{position:absolute;inset:auto 0 0 0;display:flex;justify-content:center;padding:16px;pointer-events:none;transition:opacity .4s}
+.hint.gone{opacity:0}
+.hint-in{display:flex;flex-direction:column;gap:4px;align-items:center;text-align:center;background:rgba(10,14,20,.78);border:1px solid var(--line);border-radius:14px;padding:12px 16px;max-width:420px;backdrop-filter:blur(6px)}
+.hint-in b{font-weight:600}
+.hint-in span{color:var(--dim);font-size:13px}
+.hint-in small{color:var(--faint);font-size:11px}
+.readout{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 14px}
+.readout div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;min-width:0}
+.readout label{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.readout b{display:block;font:500 14px/1.3 "IBM Plex Mono",monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px;margin-bottom:14px}
+.row{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px;min-width:0}
+.row label{font-size:13px;color:var(--dim);display:flex;justify-content:space-between}
+.row em{font:normal 500 12.5px "IBM Plex Mono",monospace;color:var(--ink)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(90deg,var(--accent) var(--p,0%),#263142 var(--p,0%))}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:#263142}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--accent)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#eef4fb;margin-top:-8px;box-shadow:0 1px 6px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border:0;border-radius:50%;background:#eef4fb}
+#fill{--accentFill:var(--water)}
+select{appearance:none;-webkit-appearance:none;background:#0b0f15 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238794a6'/%3E%3C/svg%3E") no-repeat right 12px center;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:9px 30px 9px 12px;font:inherit;font-size:14px;width:100%}
+.seg{display:flex;background:#0b0f15;border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px}
+.seg button{flex:1;background:transparent;border:0;color:var(--dim);font:500 13px Inter,sans-serif;padding:8px 6px;border-radius:8px;cursor:pointer}
+.seg button.on{background:#1d2735;color:var(--ink)}
+.side-head{display:flex;align-items:baseline;justify-content:space-between;margin:2px 0 8px}
+.note{font-size:12px;color:var(--faint)}
+#sideCv{width:100%;height:260px;display:block;touch-action:none;margin-bottom:12px;cursor:ns-resize}
+#curveCv{width:100%;height:130px;display:block}
+table{width:100%;border-collapse:collapse;font:13px "IBM Plex Mono",monospace}
+th{font:500 10.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}
+td{padding:6px;border-bottom:1px solid #151b25;white-space:nowrap}
+td.bar{width:40%}
+.lb{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#151b25}
+.lb i{display:block;height:100%}
+.l-mat{background:var(--mat)}.l-rad{background:var(--rad)}.l-vis{background:var(--vis)}.l-sup{background:var(--sup)}
+tr.hot td{color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px;font-size:11.5px;color:var(--dim);align-items:center}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:-8px}
+.how summary{cursor:pointer;font:500 13px Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);list-style:none}
+.how summary::-webkit-details-marker{display:none}
+.how summary::after{content:" +";color:var(--faint)}
+.how[open] summary::after{content:" –"}
+.how-body p{color:#b9c4d2;font-size:14px;margin:12px 0 0}
+.how-body b{color:var(--ink)}
+footer{color:var(--faint);font-size:12px;text-align:center;padding:10px}
+@media (max-width:520px){
+  main{padding:12px 10px 30px}
+  h1{font-size:28px}
+  .readout{grid-template-columns:repeat(2,1fr)}
+  .grid2{grid-template-columns:1fr;}
+  td.bar{width:30%}
+  td,th{padding:5px 4px}
+}
+
+.toprow{display:flex;justify-content:space-between;align-items:center}
+.tabs{display:flex;gap:2px;background:#0b0f15;border:1px solid var(--line);border-radius:11px;padding:3px}
+.tabs a{color:var(--dim);text-decoration:none;font:500 13px Inter,sans-serif;padding:6px 11px;border-radius:8px}
+.tabs a.on{background:#1d2735;color:var(--ink)}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="toprow"><h1>Glass<span>House</span></h1><nav class="tabs"><a href="index.html">Glass</a><a href="bowl.html" class="on">Bowl</a><a href="harp.html">Harp</a></nav></div>
+    <p class="sub">A physically modeled Himalayan singing bowl. Circle the outside of the rim with the puja; tap inside to strike it.</p>
+  </header>
+
+  <section class="stage">
+    <div class="topwrap">
+      <canvas id="top" aria-label="Bowl seen from above. Drag around the rim to rub with the puja; tap inside to strike."></canvas>
+      <div id="busy" class="busy"><div class="spin"></div><span id="busyMsg">Solving shell modes…</span></div>
+      <div id="hint" class="hint">
+        <div class="hint-in">
+          <b>Tap to wake the bowl</b>
+          <span>Then drag slowly and steadily around the rim (about half a lap per second) and let it build. Tap inside to strike it with the mallet.</span>
+          <small>On iPhone, turn off silent mode to hear Web Audio.</small>
+        </div>
+      </div>
+      <div class="xlabel" id="xlabel">rim motion ×8</div>
+    </div>
+    <div class="readout">
+      <div><label>Pitch</label><b id="roPitch">—</b></div>
+      <div><label>Puja speed</label><b id="roSpeed">—</b></div>
+      <div><label>Stick · contact</label><b id="roStick">—</b></div>
+      <div><label>Level @50 cm</label><b id="roLevel">—</b></div>
+    </div>
+  </section>
+
+  <section class="card controls">
+    <div class="row">
+      <label for="fill">Water <em id="fillOut">0%</em></label>
+      <input id="fill" type="range" min="0" max="95" step="0.5" value="0">
+    </div>
+    <div class="row">
+      <label for="press">Puja pressure <em id="pressOut">4.0 N</em></label>
+      <input id="press" type="range" min="1" max="12" step="0.1" value="4">
+    </div>
+    <div class="row">
+      <label>Puja</label>
+      <div class="seg" id="stick"><button data-v="leather" class="on">Leather-wrapped</button><button data-v="wood">Bare wood</button></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label>Rub</label><div class="seg" id="sideSel"><button data-v="1" class="on">Outside</button><button data-v="-1">Inside</button></div></div>
+      <div class="row"><label>Mallet</label><div class="seg" id="mallet"><button data-v="felt" class="on">Felt</button><button data-v="wood">Wood</button></div></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label for="shape">Bowl</label><select id="shape"></select></div>
+      <div class="row"><label for="material">Material</label><select id="material"></select></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label for="thick">Wall thickness <em id="thickOut">×1.00</em></label><input id="thick" type="range" min="0.6" max="1.6" step="0.02" value="1"></div>
+      <div class="row"><label for="size">Size <em id="sizeOut">100%</em></label><input id="size" type="range" min="70" max="135" step="1" value="100"></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label for="split">Hammering asymmetry <em id="splitOut">0.400%</em></label><input id="split" type="range" min="0" max="1.5" step="0.01" value="0.4"></div>
+      <div class="row"><label for="reverb">Room <em id="reverbOut">30%</em></label><input id="reverb" type="range" min="0" max="100" step="1" value="30"></div>
+    </div>
+    <div class="row">
+      <label for="vol">Volume <em id="volOut">80%</em></label>
+      <input id="vol" type="range" min="0" max="100" step="1" value="80">
+    </div>
+  </section>
+
+  <section class="card side">
+    <div class="side-head"><h2>Cross-section</h2><span class="note">drag the waterline</span></div>
+    <canvas id="sideCv" aria-label="Glass cross-section, drag to set water level"></canvas>
+    <div class="side-head"><h2>Pitch vs. fill</h2><span class="note" id="curveNote">(2,0) mode</span></div>
+    <canvas id="curveCv"></canvas>
+  </section>
+
+  <section class="card modes">
+    <div class="side-head"><h2>Modes</h2><span class="note">wet frequency · Q · where the energy goes</span></div>
+    <table id="modeTable"><thead><tr><th>(n,m)</th><th>f wet</th><th>f dry</th><th>Q</th><th>losses</th></tr></thead><tbody></tbody></table>
+    <div class="legend"><i class="l-mat"></i>material <i class="l-rad"></i>sound radiation <i class="l-vis"></i>water boundary layer <i class="l-sup"></i>stem/support</div>
+  </section>
+
+  <details class="card how">
+    <summary>How it's modeled</summary>
+    <div class="how-body">
+      <p><b>Bowl.</b> This is the same thin-shell finite-element solve as the glass, applied to a hand-hammered bowl. The meridian runs all the way to the axis, where the shell closes. The wall thickens into a rolled lip at the rim and toward the hammered base, and the bowl sits free on a cushion instead of being clamped to a stem. The partials come out inharmonic, as in real bowls: roughly 1 : 2.7 : 4.9 : 7.5 for the Thadobati. A 1.25 kg, Ø18 cm bell-bronze bowl sings near 290 Hz. "Antique Himalayan alloy" uses the effective modulus Terwagne &amp; Bush measured on real bowls (≈77 GPa at ≈8.9 g/cm³).</p>
+      <p><b>Puja.</b> The stick presses on the outside wall about 1.5 cm below the rim. Contact is unilateral: a stiff spring-dashpot that can only push. The stick has mass, and your hand pushes it with the set force. Friction between stick and bronze weakens with sliding speed and is solved implicitly every 10 µs, using the normal force the contact produces at that instant. A leather wrap is soft and lossy, so it stays in contact. Bare wood is stiff, so once the wall's motion exceeds the stick's tiny static indentation, the stick bounces off every cycle. That is the rattle you get when you rub a loud bowl with a wooden stick.</p>
+      <p><b>Outside vs. inside.</b> Real bowls only sing when rubbed on the outside (Debut &amp; Antunes). The model shows the same thing without being told: rubbed from inside, the radial–tangential coupling of the shell mode removes energy instead of feeding it, so the bowl only scrapes.</p>
+      <p><b>Water and sound.</b> Water uses the same potential-flow added mass as the glass, inside the bowl's true shape. A bowl's walls move most near the rim, so water lowers its pitch much less than it lowers a glass's. At a few hundred hertz and tens of microns of wall motion, the waterline sees several g, which is enough for Faraday ripples and spray. Each mode pair is split by the hammering asymmetry, so the rotating quadrupole beats ("wah-wah") at a fixed listener.</p>
+    </div>
+  </details>
+  <footer>GlassHouse · material constants go in; frequencies, mode shapes, losses and the singing itself come out.</footer>
+</main>
+<script type="text/plain" id="dsp-src">/*  GlassHouse — real-time dynamics (runs inside the AudioWorklet)
+ *  ------------------------------------------------------------
+ *  Each wet mode (n, m) is a degenerate pair (cos n·θ / sin n·θ shapes). A real
+ *  glass is never perfectly axisymmetric, so the pair is split by a tiny
+ *  fraction about a fixed "defect" axis — this is what makes real glasses beat.
+ *
+ *  Finger = fingertip pad: mass m_p on a shear spring/damper (skin) whose base
+ *  is your fingertip moving round the rim. Pad ↔ glass contact obeys a
+ *  velocity-weakening (Stribeck) friction law, solved implicitly every
+ *  sub-step: stick if the force needed to keep zero slip is below μs·F_N,
+ *  otherwise slip with μ(|v_rel|)·F_N. The glass side of that solve uses the
+ *  exact one-step mobility of all modes at the contact point, so stick–slip
+ *  locks to the glass resonance on its own — nothing is told what pitch to make.
+ *  Skin also damps radial/axial rim motion under the finger (∝ F_N^0.7).
+ *  Sound = far-field pressure from each mode's radiated power with its cos(nθ)
+ *  directivity, picked up at two virtual mics in front of the glass.
+ */
+(function (root) {
+  'use strict';
+  const TAU = Math.PI * 2;
+  const wrap = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
+
+  const FINGER = {
+    wet:  { mu0: 0.60, d: 0.15, eps: 0.05, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+    dry:  { mu0: 0.85, d: 0.03,  eps: 0.001, beta: 0.6, Dc: 2e-6, vAge: 0.002 },
+    oily: { mu0: 0.22, d: 0.004, eps: 0.003, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+    // puja sticks on bronze (rubbing the outside wall just below the rim)
+    leather: { mu0: 0.55, d: 0.12, eps: 0.04, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+    wood:    { mu0: 0.38, d: 0.07, eps: 0.04, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+  };
+
+  // puja contact mechanics: unilateral radial contact (penalty spring-dashpot), stick mass held by the hand,
+  // tangential compliance of hand+stick. Leather is soft and lossy; bare wood is stiff, so it can lose
+  // contact on every cycle once the rim amplitude exceeds the static indentation -> the rattle.
+  const PUJA = {
+    leather: { kc: 4e4, cc: 12, ms: 0.03, ch: 3, mp: 0.004, kp: 6000, cp: 4 },
+    wood:    { kc: 4e5, cc: 6,  ms: 0.03, ch: 3, mp: 0.004, kp: 6000, cp: 4 },
+  };
+
+  // steady-state friction: logarithmic velocity weakening (rate-and-state form) + viscous term
+  function muSteady(fr, v) { return Math.max(0.02, fr.mu0 - fr.d * Math.log((v + fr.eps) / 0.1) + fr.beta * v); }
+
+  class GlassVoice {
+    constructor(fs, opt) {
+      this.fs = fs; this.os = (opt && opt.os) || 2; this.dt = 1 / (fs * this.os);
+      this.N = 0; this.cap = 64; this.alloc(this.cap);
+      this.keys = []; this.alpha = 0.37; this.split = 3e-4;
+      this.Rrim = 0.036;
+      // finger
+      this.down = false; this.theta = 0; this.thetaT = 0; this.omT = 0; this.omS = 0;
+      this.FN = 1.0; this.fr = FINGER.wet; this.mu = 0.7;
+      this.mp = 3e-5; this.kp = 1000; this.cp = 1.5;   // fingertip shear impedance (Wiertlewski & Hayward 2012) this.xp = 0; this.vp = 0; this.vb = 0;
+      this.cc0 = 3.0; this.rough = 0.01; this.ridge = 4.5e-4; this.ridgePh = 0; this.nz = 0;
+      // taps
+      this.tapT = -1; this.tapDur = 4e-4; this.tapF = 0; this.tapTh = 0;
+      // exciter: 'finger' (on the rim top, constant normal force) or 'puja' (radial unilateral contact)
+      this.exc = 'finger'; this.side = 1; this.pj = PUJA.leather; this.y = 0; this.yd = 0; this.Fc = 0; this.contactCount = 0; this.FcAcc = 0;
+      // mics: viewer is at the bottom of the screen (theta = +pi/2), mics +-25 deg
+      this.mic = [Math.PI / 2 + 0.44, Math.PI / 2 - 0.44];
+      this.gain = 1 / 0.25;                            // 0.25 Pa -> full scale
+      this.stickCount = 0; this.stepCount = 0; this.pAcc = 0; this.pN = 0;
+      this.seed = 12345;
+    }
+    alloc(n) {
+      const F = () => new Float64Array(n);
+      this.q = F(); this.v = F(); this.w2 = F(); this.dc = F(); this.om = F();
+      this.nn = new Int32Array(n); this.isB = new Uint8Array(n);
+      this.aT = F(); this.aR = F(); this.aA = F(); this.gL = F(); this.gR = F(); this.G = F();
+      this.pT = F(); this.pR = F(); this.pA = F(); this.vs = F();
+    }
+    rand() { this.seed = (this.seed * 1664525 + 1013904223) >>> 0; return this.seed / 4294967296 * 2 - 1; }
+
+    setModes(list, opt) {
+      opt = opt || {};
+      if (opt.split != null) this.split = opt.split;
+      if (opt.alpha != null) this.alpha = opt.alpha;
+      if (opt.Rrim) this.Rrim = opt.Rrim;
+      const oldIdx = new Map(); this.keys.forEach((k, i) => oldIdx.set(k, i));
+      const oq = this.q, ov = this.v;
+      const lim = 1.7 / this.dt, need = list.length * 2;
+      if (need > this.cap) { this.cap = need; }
+      const q = new Float64Array(this.cap), v = new Float64Array(this.cap);
+      const keep = this.q; this.alloc(this.cap);
+      const keys = []; let k = 0;
+      for (const m of list) {
+        if (m.omega > lim) continue;
+        for (let b = 0; b < 2; b++) {
+          const key = m.key + (b ? 'B' : 'A'), j = oldIdx.get(key);
+          if (j != null) { q[k] = oq[j]; v[k] = ov[j]; }
+          const om = m.omega * (1 + (b ? 0.5 : -0.5) * this.split);
+          this.om[k] = om;
+          this.w2[k] = Math.pow(2 / this.dt * Math.sin(om * this.dt / 2), 2);  // pre-warped for symplectic Euler
+          this.dc[k] = 2 * m.zeta * om;
+          this.nn[k] = m.n; this.isB[k] = b;
+          this.aT[k] = m.rimV; this.aR[k] = m.rimR; this.aA[k] = m.rimA; this.G[k] = m.G;
+          const fL = this.mic[0] - this.alpha, fR = this.mic[1] - this.alpha;
+          this.gL[k] = m.G * (b ? Math.sin(m.n * fL) : Math.cos(m.n * fL));
+          this.gR[k] = m.G * (b ? Math.sin(m.n * fR) : Math.cos(m.n * fR));
+          keys.push(key); k++;
+        }
+      }
+      this.q = q; this.v = v; this.N = k; this.keys = keys;
+    }
+
+    setFinger(f) {
+      if (f.FN != null) this.FN = f.FN;
+      if (f.cond) this.fr = FINGER[f.cond] || FINGER.wet;
+      if (f.down != null) {
+        if (f.down && !this.down) { this.mu = muSteady(this.fr, 0); this.seatPuja = true; this.theta = f.theta; this.thetaT = f.theta; this.omS = 0; this.xp = 0; this.vp = 0; }
+        this.down = f.down;
+      }
+      if (f.theta != null) this.thetaT = f.theta;
+      if (f.omega != null) this.omT = f.omega;
+    }
+    // true when the glass is silent and untouched: skip it entirely (saves CPU with many glasses)
+    quiet() {
+      if (this.down || this.tapT >= 0) return false;
+      let e = 0; for (let k = 0; k < this.N; k++) e += this.G[k] * (Math.abs(this.v[k]) + this.om[k] * Math.abs(this.q[k]));
+      if (e < 3e-6) { if (e > 0) { this.q.fill(0); this.v.fill(0); } return true; }
+      return false;
+    }
+    tap(theta, force, dur) { this.tapT = 0; this.tapTh = theta; this.tapF = force || 6; this.tapDur = dur || 4e-4; }
+    setExciter(e) {
+      if (e.kind) this.exc = e.kind;
+      if (e.side) this.side = e.side;
+      if (e.stick && PUJA[e.stick]) { this.pj = PUJA[e.stick]; this.fr = FINGER[e.stick]; }
+      if (this.exc === 'puja') { this.mp = this.pj.mp; this.kp = this.pj.kp; this.cp = this.pj.cp; }
+      else { this.mp = 3e-5; this.kp = 1000; this.cp = 1.5; }
+    }
+    damp() { this.q.fill(0); this.v.fill(0); }
+
+    // shape factors for oscillator k at angle th
+    process(outL, outR, len) {
+      const dt = this.dt, os = this.os, N = this.N, fr = this.fr;
+      const q = this.q, v = this.v, w2 = this.w2, dc = this.dc, nn = this.nn, isB = this.isB;
+      const aT = this.aT, aR = this.aR, aA = this.aA, pT = this.pT, pR = this.pR, pA = this.pA, vs = this.vs;
+      const cn = new Float64Array(8), snn = new Float64Array(8), tc = new Float64Array(8), ts = new Float64Array(8);
+      const aW = 1 - Math.exp(-dt / 0.018);
+      for (let i = 0; i < len; i++) {
+        let accL = 0, accR = 0;
+        for (let o = 0; o < os; o++) {
+          // ---- finger kinematics (smoothed velocity, soft position lock)
+          if (this.down) {
+            this.omS += (this.omT - this.omS) * aW;
+            this.thetaT += this.omT * dt;
+            this.theta += this.omS * dt + wrap(this.thetaT - this.theta) * 25 * dt;
+            this.vb = this.Rrim * this.omS;
+          }
+          const ph = this.theta - this.alpha, c1 = Math.cos(ph), s1 = Math.sin(ph);
+          cn[0] = 1; snn[0] = 0; cn[1] = c1; snn[1] = s1;
+          for (let n = 2; n < 8; n++) { cn[n] = cn[n - 1] * c1 - snn[n - 1] * s1; snn[n] = snn[n - 1] * c1 + cn[n - 1] * s1; }
+          let tapping = false, Ft = 0;
+          if (this.tapT >= 0) {
+            const tp = this.tapTh - this.alpha, c = Math.cos(tp), s = Math.sin(tp);
+            tc[0] = 1; ts[0] = 0; tc[1] = c; ts[1] = s;
+            for (let n = 2; n < 8; n++) { tc[n] = tc[n - 1] * c - ts[n - 1] * s; ts[n] = ts[n - 1] * c + tc[n - 1] * s; }
+            Ft = -this.tapF * Math.sin(Math.PI * this.tapT / this.tapDur);          // inward radial push
+            tapping = true; this.tapT += dt; if (this.tapT > this.tapDur) this.tapT = -1;
+          }
+          // ---- contact geometry + explicit forces
+          let vr = 0, va = 0, Y = 0;
+          for (let k = 0; k < N; k++) {
+            const n = nn[k], C = cn[n], S = snn[n];
+            if (isB[k]) { pT[k] = -aT[k] * C; pR[k] = aR[k] * S; pA[k] = aA[k] * S; }
+            else { pT[k] = aT[k] * S; pR[k] = aR[k] * C; pA[k] = aA[k] * C; }
+            vr += pR[k] * v[k]; va += pA[k] * v[k]; Y += pT[k] * pT[k];
+          }
+          let Fr, Fa, FNnow = this.FN;
+          if (this.exc === 'puja') {
+            let ur = 0; for (let k = 0; k < N; k++) ur += pR[k] * q[k];
+            const P = this.pj, sd = this.side;
+            let Fc = 0;
+            if (this.down) {
+              if (this.seatPuja) { this.y = ur - sd * this.FN / P.kc; this.yd = vr; this.seatPuja = false; }
+              const del = sd * (ur - this.y), deld = sd * (vr - this.yd);
+              if (del > 0) { Fc = P.kc * del + P.cc * deld; if (Fc < 0) Fc = 0; }
+              this.yd += dt * (sd * Fc - sd * this.FN - P.ch * this.yd) / P.ms; this.y += dt * this.yd;
+              if (Fc > 0) this.contactCount++;
+              this.FcAcc += Fc;
+            }
+            this.Fc = Fc; FNnow = Fc;
+            Fr = -sd * Fc; Fa = 0;
+          } else {
+            const cc = this.down ? this.cc0 * Math.sqrt(this.FN) : 0;
+            Fr = -cc * vr; Fa = -cc * va;
+          }
+          let vg = 0;
+          for (let k = 0; k < N; k++) {
+            let Q = pR[k] * Fr + pA[k] * Fa;
+            if (tapping) { const n = nn[k]; Q += Ft * aR[k] * (isB[k] ? ts[n] : tc[n]); }
+            const vk = (v[k] + dt * (-w2[k] * q[k] + Q)) / (1 + dc[k] * dt);
+            vs[k] = vk; vg += pT[k] * vk;
+          }
+          // ---- friction (implicit)
+          let F = 0;
+          if (this.down && FNnow > 0) {
+            const mp = this.mp;
+            const vpS = (this.vp + dt * (-this.kp * this.xp + this.cp * this.vb) / mp) / (1 + this.cp * dt / mp);
+            const vrel = vpS - vg, Z = dt * (1 / mp + Y);
+            // fingerprint ridges + skin micro-roughness modulate the friction coefficient
+            this.ridgePh += Math.abs(this.vb) * dt / this.ridge;
+            this.nz = 0.97 * this.nz + 0.03 * this.rand();
+            const mod = 1 + this.rough * (0.6 * Math.sin(TAU * this.ridgePh) + 4 * this.nz);
+            const FN = FNnow, muNow = this.mu * mod;
+            const Fs = vrel / Z;
+            let vAfter;
+            if (Math.abs(Fs) <= muNow * FN) { F = Fs; vAfter = 0; this.stickCount++; }
+            else { const sg = vrel > 0 ? 1 : -1; F = sg * muNow * FN; vAfter = vrel - Z * F; }
+            // rate-and-state friction: the contact's friction level relaxes toward the
+            // steady-state Stribeck value over a slip distance Dc (and re-ages while stuck)
+            const av = Math.abs(vAfter);
+            const muSS = muSteady(fr, av);
+            const rate = fr.tau ? 1 / fr.tau : (av + fr.vAge) / fr.Dc;
+            this.mu += (muSS - this.mu) * (1 - Math.exp(-dt * rate));
+            this.vp = vpS - dt * F / mp;
+            this.xp += dt * (this.vp - this.vb);
+            this.stepCount++;
+          }
+          // ---- update modes, radiate
+          let pl = 0, pr = 0;
+          const gL = this.gL, gR = this.gR;
+          for (let k = 0; k < N; k++) {
+            const vk = vs[k] + dt * pT[k] * F;
+            v[k] = vk; q[k] += dt * vk;
+            pl += gL[k] * vk; pr += gR[k] * vk;
+          }
+          accL += pl; accR += pr;
+        }
+        const L = accL / os, R = accR / os;
+        this.pAcc += 0.5 * (L * L + R * R); this.pN++;
+        outL[i] = L * this.gain; outR[i] = R * this.gain;
+      }
+    }
+
+    // snapshot for visuals: complex amplitude per oscillator
+    snapshot() {
+      const N = this.N, amps = new Float64Array(N * 2);
+      for (let k = 0; k < N; k++) { amps[2 * k] = this.q[k]; amps[2 * k + 1] = this.v[k] / this.om[k]; }
+      const prms = Math.sqrt(this.pAcc / Math.max(1, this.pN));
+      const stick = this.stepCount ? this.stickCount / this.stepCount : 0;
+      const steps = this.pN * this.os, contact = this.down && steps ? this.contactCount / steps : 0, Fmean = steps ? this.FcAcc / steps : 0;
+      this.pAcc = 0; this.pN = 0; this.stickCount = 0; this.stepCount = 0; this.contactCount = 0; this.FcAcc = 0;
+      return { keys: this.keys.slice(), amps, theta: this.theta, down: this.down, prms, stick, vb: this.vb, alpha: this.alpha, contact, Fmean, y: this.y };
+    }
+  }
+
+  const api = { GlassVoice, FINGER, PUJA };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GlassDSP = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+</script>
+<script>/*  GlassHouse — physics core
+ *  ------------------------------------------------------------
+ *  1. Glass bowl = thin elastic shell of revolution (Love first-approximation
+ *     strains), discretised along the meridian with C1 Hermite-cubic elements
+ *     for u (meridional), v (circumferential), w (normal), one Fourier order n
+ *     at a time, clamped where the bowl meets the stem.
+ *  2. Liquid = inviscid, incompressible potential flow inside the real bowl
+ *     shape, pressure-release free surface (phi = 0; gravity/capillarity are
+ *     negligible at audio frequency). Solved by Ritz minimisation of the
+ *     kinetic-energy functional -> added-mass matrix in dry-mode coordinates.
+ *  3. Wet modes = generalised eigenproblem K q = w^2 (M + M_fluid) q in a
+ *     basis of dry modes.
+ *  4. Losses per mode: material loss factor, acoustic radiation (exact 2-D
+ *     cylindrical-harmonic radiation resistance applied strip-wise along the
+ *     bowl height), viscous Stokes boundary layer of the liquid at the wall
+ *     (from the potential-flow slip velocity), small support loss.
+ */
+(function (root) {
+  'use strict';
+
+  // ---------------------------------------------------------------- linalg
+  function mat(n, m) { const a = new Array(n); for (let i = 0; i < n; i++) a[i] = new Float64Array(m); return a; }
+
+  function cholesky(A) {
+    const n = A.length, L = mat(n, n);
+    for (let j = 0; j < n; j++) {
+      let s = A[j][j];
+      const Lj = L[j];
+      for (let k = 0; k < j; k++) s -= Lj[k] * Lj[k];
+      if (!(s > 0)) throw new Error('matrix not SPD at ' + j + ' (' + s + ')');
+      const d = Math.sqrt(s); Lj[j] = d;
+      for (let i = j + 1; i < n; i++) {
+        const Li = L[i]; let t = A[i][j];
+        for (let k = 0; k < j; k++) t -= Li[k] * Lj[k];
+        Li[j] = t / d;
+      }
+    }
+    return L;
+  }
+  function fwdSub(L, b) { const n = L.length, x = new Float64Array(n); for (let i = 0; i < n; i++) { let s = b[i]; const Li = L[i]; for (let k = 0; k < i; k++) s -= Li[k] * x[k]; x[i] = s / Li[i]; } return x; }
+  function bwdSubT(L, b) { const n = L.length, x = new Float64Array(n); for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let k = i + 1; k < n; k++) s -= L[k][i] * x[k]; x[i] = s / L[i][i]; } return x; }
+  function cholSolve(L, b) { return bwdSubT(L, fwdSub(L, b)); }
+
+  // Symmetric eigen-decomposition (Householder tridiagonalisation + implicit QL; JAMA port)
+  function symEig(A) {
+    const n = A.length, V = A.map(r => Float64Array.from(r)), d = new Float64Array(n), e = new Float64Array(n);
+    for (let j = 0; j < n; j++) d[j] = V[n - 1][j];
+    for (let i = n - 1; i > 0; i--) {
+      let scale = 0, h = 0;
+      for (let k = 0; k < i; k++) scale += Math.abs(d[k]);
+      if (scale === 0) {
+        e[i] = d[i - 1];
+        for (let j = 0; j < i; j++) { d[j] = V[i - 1][j]; V[i][j] = 0; V[j][i] = 0; }
+      } else {
+        for (let k = 0; k < i; k++) { d[k] /= scale; h += d[k] * d[k]; }
+        let f = d[i - 1], g = Math.sqrt(h); if (f > 0) g = -g;
+        e[i] = scale * g; h -= f * g; d[i - 1] = f - g;
+        for (let j = 0; j < i; j++) e[j] = 0;
+        for (let j = 0; j < i; j++) {
+          f = d[j]; V[j][i] = f; g = e[j] + V[j][j] * f;
+          for (let k = j + 1; k <= i - 1; k++) { g += V[k][j] * d[k]; e[k] += V[k][j] * f; }
+          e[j] = g;
+        }
+        f = 0;
+        for (let j = 0; j < i; j++) { e[j] /= h; f += e[j] * d[j]; }
+        const hh = f / (h + h);
+        for (let j = 0; j < i; j++) e[j] -= hh * d[j];
+        for (let j = 0; j < i; j++) {
+          f = d[j]; g = e[j];
+          for (let k = j; k <= i - 1; k++) V[k][j] -= (f * e[k] + g * d[k]);
+          d[j] = V[i - 1][j]; V[i][j] = 0;
+        }
+      }
+      d[i] = h;
+    }
+    for (let i = 0; i < n - 1; i++) {
+      V[n - 1][i] = V[i][i]; V[i][i] = 1; const h = d[i + 1];
+      if (h !== 0) {
+        for (let k = 0; k <= i; k++) d[k] = V[k][i + 1] / h;
+        for (let j = 0; j <= i; j++) {
+          let g = 0;
+          for (let k = 0; k <= i; k++) g += V[k][i + 1] * V[k][j];
+          for (let k = 0; k <= i; k++) V[k][j] -= g * d[k];
+        }
+      }
+      for (let k = 0; k <= i; k++) V[k][i + 1] = 0;
+    }
+    for (let j = 0; j < n; j++) { d[j] = V[n - 1][j]; V[n - 1][j] = 0; }
+    V[n - 1][n - 1] = 1; e[0] = 0;
+    for (let i = 1; i < n; i++) e[i - 1] = e[i];
+    e[n - 1] = 0;
+    let f = 0, tst1 = 0; const eps = Math.pow(2, -52);
+    for (let l = 0; l < n; l++) {
+      tst1 = Math.max(tst1, Math.abs(d[l]) + Math.abs(e[l]));
+      let m = l;
+      while (m < n) { if (Math.abs(e[m]) <= eps * tst1) break; m++; }
+      if (m > l) {
+        let iter = 0;
+        do {
+          if (++iter > 200) break;
+          let g = d[l], p = (d[l + 1] - g) / (2 * e[l]), r = Math.hypot(p, 1); if (p < 0) r = -r;
+          d[l] = e[l] / (p + r); d[l + 1] = e[l] * (p + r);
+          const dl1 = d[l + 1]; let h = g - d[l];
+          for (let i = l + 2; i < n; i++) d[i] -= h;
+          f += h;
+          p = d[m]; let c = 1, c2 = c, c3 = c; const el1 = e[l + 1]; let s = 0, s2 = 0;
+          for (let i = m - 1; i >= l; i--) {
+            c3 = c2; c2 = c; s2 = s;
+            g = c * e[i]; h = c * p; r = Math.hypot(p, e[i]);
+            e[i + 1] = s * r; s = e[i] / r; c = p / r; p = c * d[i] - s * g;
+            d[i + 1] = h + s * (c * g + s * d[i]);
+            for (let k = 0; k < n; k++) { h = V[k][i + 1]; V[k][i + 1] = s * V[k][i] + c * h; V[k][i] = c * V[k][i] - s * h; }
+          }
+          p = -s * s2 * c3 * el1 * e[l] / dl1; e[l] = s * p; d[l] = c * p;
+        } while (Math.abs(e[l]) > eps * tst1);
+      }
+      d[l] = d[l] + f; e[l] = 0;
+    }
+    const idx = Array.from({ length: n }, (_, i) => i).sort((a, b) => d[a] - d[b]);
+    return { values: idx.map(i => d[i]), vectors: idx.map(i => { const v = new Float64Array(n); for (let k = 0; k < n; k++) v[k] = V[k][i]; return v; }) };
+  }
+
+  // Generalised symmetric-definite eigenproblem K x = lambda M x, x^T M x = 1
+  function genEig(K, M, nKeep) {
+    const n = K.length, L = cholesky(M);
+    const X = mat(n, n);                              // X = L^-1 K   (column by column)
+    const col = new Float64Array(n);
+    for (let j = 0; j < n; j++) { for (let i = 0; i < n; i++) col[i] = K[i][j]; const y = fwdSub(L, col); for (let i = 0; i < n; i++) X[i][j] = y[i]; }
+    const C = mat(n, n);                              // C = L^-1 X^T
+    for (let j = 0; j < n; j++) { for (let i = 0; i < n; i++) col[i] = X[j][i]; const y = fwdSub(L, col); for (let i = 0; i < n; i++) C[i][j] = y[i]; }
+    for (let i = 0; i < n; i++) for (let j = 0; j < i; j++) { const a = 0.5 * (C[i][j] + C[j][i]); C[i][j] = a; C[j][i] = a; }
+    const { values, vectors } = symEig(C);
+    const k = Math.min(nKeep || n, n), out = [];
+    for (let i = 0; i < k; i++) out.push({ lambda: values[i], x: bwdSubT(L, vectors[i]) });
+    return out;
+  }
+
+  // -------------------------------------------------------------- quadrature
+  const GL = (function () {
+    function rule(n) {                                // Gauss-Legendre on [-1,1]
+      const x = new Float64Array(n), w = new Float64Array(n);
+      for (let i = 0; i < n; i++) {
+        let z = Math.cos(Math.PI * (i + 0.75) / (n + 0.5)), pp = 0;
+        for (let it = 0; it < 100; it++) {
+          let p1 = 1, p2 = 0;
+          for (let j = 1; j <= n; j++) { const p3 = p2; p2 = p1; p1 = ((2 * j - 1) * z * p2 - (j - 1) * p3) / j; }
+          pp = n * (z * p1 - p2) / (z * z - 1);
+          const z1 = z; z = z1 - p1 / pp; if (Math.abs(z - z1) < 1e-15) break;
+        }
+        x[i] = z; w[i] = 2 / ((1 - z * z) * pp * pp);
+      }
+      return { x, w };
+    }
+    const c = {}; return n => c[n] || (c[n] = rule(n));
+  })();
+
+  // Legendre P_0..P_{N-1} and derivatives at X
+  function legendre(N, X, P, dP) {
+    P[0] = 1; dP[0] = 0; if (N > 1) { P[1] = X; dP[1] = 1; }
+    for (let k = 2; k < N; k++) { P[k] = ((2 * k - 1) * X * P[k - 1] - (k - 1) * P[k - 2]) / k; dP[k] = dP[k - 2] + (2 * k - 1) * P[k - 1]; }
+  }
+
+  // ----------------------------------------------------------------- Bessel
+  const EULER = 0.5772156649015329;
+  function besselJ(n, x) { let s = 0, t = Math.pow(x / 2, n); for (let k = 1; k <= n; k++) t /= k; for (let k = 0; k < 80; k++) { s += t; t *= -(x * x / 4) / ((k + 1) * (k + 1 + n)); if (Math.abs(t) < 1e-18 * Math.abs(s)) break; } return s; }
+  function besselY(n, x) {                            // A&S 9.1.11, integer n >= 0
+    const h = x / 2; let s1 = 0;
+    if (n > 0) { const fact = [1]; for (let i = 1; i <= n; i++) fact[i] = fact[i - 1] * i; for (let k = 0; k < n; k++) s1 += fact[n - k - 1] / fact[k] * Math.pow(h * h, k); s1 *= -Math.pow(h, -n) / Math.PI; }
+    const s2 = 2 / Math.PI * Math.log(h) * besselJ(n, x);
+    let psiK = -EULER, psiNK = -EULER; for (let i = 1; i <= n; i++) psiNK += 1 / i;
+    let t = Math.pow(h, n); for (let i = 1; i <= n; i++) t /= i;          // (h^n)/(0! n!)
+    let s3 = 0;
+    for (let k = 0; k < 80; k++) {
+      s3 += (psiK + psiNK) * t;
+      t *= -(h * h) / ((k + 1) * (n + k + 1)); psiK += 1 / (k + 1); psiNK += 1 / (n + k + 1);
+      if (Math.abs(t) < 1e-18) break;
+    }
+    return s1 + s2 - s3 / Math.PI;
+  }
+  // Real part of the specific radiation impedance of a cylinder vibrating as cos(n theta):
+  //   z_n = i rho c H_n(ka)/H_n'(ka);  Re z_n = rho c * (2/(pi ka)) / |H_n'(ka)|^2  (Wronskian)
+  function radResistance(n, x, rhoC) {
+    const dJ = n === 0 ? -besselJ(1, x) : 0.5 * (besselJ(n - 1, x) - besselJ(n + 1, x));
+    const dY = n === 0 ? -besselY(1, x) : 0.5 * (besselY(n - 1, x) - besselY(n + 1, x));
+    return rhoC * (2 / (Math.PI * x)) / (dJ * dJ + dY * dY);
+  }
+
+  // --------------------------------------------------------------- geometry
+  // Midsurface meridian = cubic Bezier in (r, z) [mm], P0 at stem junction.
+  function makeGeometry(P, scale, tRim, tBase, thickFn) {
+    const S = scale * 1e-3;
+    const p = P.map(q => [q[0] * S, q[1] * S]);
+    function bz(t) {
+      const u = 1 - t;
+      const r = u * u * u * p[0][0] + 3 * u * u * t * p[1][0] + 3 * u * t * t * p[2][0] + t * t * t * p[3][0];
+      const z = u * u * u * p[0][1] + 3 * u * u * t * p[1][1] + 3 * u * t * t * p[2][1] + t * t * t * p[3][1];
+      const d1 = (a, b) => 3 * (u * u * (p[1][a] - p[0][a]) + 2 * u * t * (p[2][a] - p[1][a]) + t * t * (p[3][a] - p[2][a]));
+      const d2 = a => 6 * (u * (p[2][a] - 2 * p[1][a] + p[0][a]) + t * (p[3][a] - 2 * p[2][a] + p[1][a]));
+      const d3 = a => 6 * (p[3][a] - 3 * p[2][a] + 3 * p[1][a] - p[0][a]);
+      return { r, z, rt: d1(0), zt: d1(1), rtt: d2(0), ztt: d2(1), rttt: d3(0), zttt: d3(1) };
+    }
+    const NT = 4000, Ts = new Float64Array(NT + 1), Ss = new Float64Array(NT + 1);
+    let prev = Math.hypot(bz(0).rt, bz(0).zt);
+    for (let i = 1; i <= NT; i++) {                   // Simpson per sub-interval
+      const t0 = (i - 1) / NT, t1 = i / NT, tm = 0.5 * (t0 + t1);
+      const bm = bz(tm), b1 = bz(t1), sm = Math.hypot(bm.rt, bm.zt), s1 = Math.hypot(b1.rt, b1.zt);
+      Ss[i] = Ss[i - 1] + (t1 - t0) * (prev + 4 * sm + s1) / 6; Ts[i] = t1; prev = s1;
+    }
+    const L = Ss[NT];
+    function tOfS(s) {
+      if (s <= 0) return 0; if (s >= L) return 1;
+      let lo = 0, hi = NT; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (Ss[m] < s) lo = m; else hi = m; }
+      let t = Ts[lo] + (s - Ss[lo]) / (Ss[hi] - Ss[lo]) * (Ts[hi] - Ts[lo]);
+      const b = bz(t); t += 0; return t;
+    }
+    function thick(s) { if (thickFn) return thickFn(s, L); const x = 1 - s / L; return tRim + (tBase - tRim) * x * x; }
+    function at(s) {
+      const b = bz(tOfS(s));
+      const sig = Math.hypot(b.rt, b.zt), c = b.rt / sig, sn = b.zt / sig;
+      const N = b.rt * b.ztt - b.zt * b.rtt, Nt = b.rt * b.zttt - b.zt * b.rttt;
+      const sigt = (b.rt * b.rtt + b.zt * b.ztt) / sig;
+      const k1 = N / (sig * sig * sig);
+      const dk1 = (Nt / (sig * sig * sig) - 3 * N * sigt / (sig * sig * sig * sig)) / sig;
+      const k2 = sn / b.r, dk2 = c * (k1 - k2) / b.r;
+      return { r: b.r, z: b.z, c, sn, k1, dk1, k2, dk2, t: thick(s) };
+    }
+    // inner (liquid-side) surface table, z made monotone
+    const NI = 800, inner = { s: new Float64Array(NI + 1), r: new Float64Array(NI + 1), z: new Float64Array(NI + 1) };
+    for (let i = 0; i <= NI; i++) {
+      const s = L * i / NI, g = at(s);
+      inner.s[i] = s; inner.r[i] = g.r - 0.5 * g.t * g.sn; inner.z[i] = g.z + 0.5 * g.t * g.c;
+      if (i > 0 && inner.z[i] <= inner.z[i - 1]) inner.z[i] = inner.z[i - 1] + 1e-9;
+    }
+    function innerAtZ(zq) {                           // returns {r, s}
+      const Z = inner.z; if (zq <= Z[0]) return { r: inner.r[0], s: 0 };
+      if (zq >= Z[NI]) return { r: inner.r[NI], s: L };
+      let lo = 0, hi = NI; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (Z[m] < zq) lo = m; else hi = m; }
+      const f = (zq - Z[lo]) / (Z[hi] - Z[lo]);
+      return { r: inner.r[lo] + f * (inner.r[hi] - inner.r[lo]), s: inner.s[lo] + f * (inner.s[hi] - inner.s[lo]) };
+    }
+    let rMaxOuter = 0; for (let i = 0; i <= 200; i++) { const g = at(L * i / 200); rMaxOuter = Math.max(rMaxOuter, g.r + 0.5 * g.t * g.sn); }
+    const rim = at(L);
+    return { L, at, thick, inner, innerAtZ, zFloor: inner.z[0], zRimIn: inner.z[NI], rim, rimR: rim.r, rMaxOuter, profileT: bz };
+  }
+
+  // -------------------------------------------------------- shell FE (order n)
+  function hermite(x, h, N, dN, ddN) {
+    const x2 = x * x, x3 = x2 * x;
+    N[0] = 1 - 3 * x2 + 2 * x3; N[1] = h * (x - 2 * x2 + x3); N[2] = 3 * x2 - 2 * x3; N[3] = h * (x3 - x2);
+    dN[0] = (-6 * x + 6 * x2) / h; dN[1] = (1 - 4 * x + 3 * x2); dN[2] = (6 * x - 6 * x2) / h; dN[3] = (3 * x2 - 2 * x);
+    ddN[0] = (-6 + 12 * x) / (h * h); ddN[1] = (-4 + 6 * x) / h; ddN[2] = (6 - 12 * x) / (h * h); ddN[3] = (6 * x - 2) / h;
+  }
+  const FIELD_OFF = { U: 0, V: 2, W: 4 };
+  const LOC = f => [FIELD_OFF[f], FIELD_OFF[f] + 1, 6 + FIELD_OFF[f], 6 + FIELD_OFF[f] + 1];
+  const LU = LOC('U'), LV = LOC('V'), LW = LOC('W');
+
+  function shellModes(geo, matl, n, opts) {
+    opts = opts || {};
+    const Ne = opts.Ne || 36, nKeep = opts.nKeep || 8, clamp = opts.clamp !== false;
+    const L = geo.L, nodes = new Float64Array(Ne + 1);
+    for (let i = 0; i <= Ne; i++) { const x = i / Ne; nodes[i] = L * (0.6 * x + 0.4 * x * x); } // finer near the clamp
+    const nd = 6 * (Ne + 1), K = mat(nd, nd), M = mat(nd, nd);
+    const E = matl.E, nu = matl.nu, rho = matl.rho, q = GL(5);
+    const N = new Float64Array(4), dN = new Float64Array(4), ddN = new Float64Array(4);
+    const rows = Array.from({ length: 9 }, () => new Float64Array(12)); // e1 e2 g k1 k2 tw | U V W
+    for (let e = 0; e < Ne; e++) {
+      const sa = nodes[e], h = nodes[e + 1] - sa, base = 6 * e;
+      for (let iq = 0; iq < q.x.length; iq++) {
+        const x = 0.5 * (q.x[iq] + 1), wq = 0.5 * q.w[iq] * h, s = sa + x * h, g = geo.at(s);
+        hermite(x, h, N, dN, ddN);
+        for (const r of rows) r.fill(0);
+        const [e1, e2, gm, kb1, kb2, tw, mU, mV, mW] = rows;
+        const r = g.r, c = g.c, k1 = g.k1, k2 = g.k2, dk1 = g.dk1, dk2 = g.dk2;
+        for (let a = 0; a < 4; a++) {
+          const iu = LU[a], iv = LV[a], iw = LW[a];
+          const U = N[a], Up = dN[a], V = N[a], Vp = dN[a], W = N[a], Wp = dN[a], Wpp = ddN[a];
+          // contributions of U-dof
+          e1[iu] += Up; e2[iu] += c * U / r; gm[iu] += -n * U / r;
+          { const B1 = k1 * U, B1p = dk1 * U + k1 * Up; kb1[iu] += B1p; kb2[iu] += c * B1 / r; tw[iu] += -n * B1 / r; }
+          mU[iu] += U;
+          // V-dof
+          e2[iv] += n * V / r; gm[iv] += Vp - c * V / r;
+          { const B2 = k2 * V, B2p = dk2 * V + k2 * Vp; kb2[iv] += n * B2 / r; tw[iv] += B2p - c * B2 / r; }
+          mV[iv] += V;
+          // W-dof
+          e1[iw] += k1 * W; e2[iw] += k2 * W;
+          { const B1 = -Wp, B1p = -Wpp, B2 = n * W / r, B2p = n * (Wp / r - c * W / (r * r));
+            kb1[iw] += B1p; kb2[iw] += (n * B2 + c * B1) / r; tw[iw] += B2p - c * B2 / r - n * B1 / r; }
+          mW[iw] += W;
+        }
+        const t = g.t, Cm = E * t / (1 - nu * nu), Db = E * t * t * t / (12 * (1 - nu * nu));
+        const dA = Math.PI * r * wq, mu = rho * t * dA, G = 0.5 * (1 - nu);
+        for (let i = 0; i < 12; i++) {
+          const Ki = K[base + i], Mi = M[base + i];
+          for (let j = 0; j < 12; j++) {
+            Ki[base + j] += dA * (Cm * (e1[i] * e1[j] + e2[i] * e2[j] + nu * (e1[i] * e2[j] + e2[i] * e1[j]) + G * gm[i] * gm[j])
+                                + Db * (kb1[i] * kb1[j] + kb2[i] * kb2[j] + nu * (kb1[i] * kb2[j] + kb2[i] * kb1[j]) + G * tw[i] * tw[j]));
+            Mi[base + j] += mu * (mU[i] * mU[j] + mV[i] * mV[j] + mW[i] * mW[j]);
+          }
+        }
+      }
+    }
+    const fixed = new Set(opts.bc === 'pole' ? [0, 2, 4] : clamp ? [0, 2, 4, 5] : []);   // pole: closed bowl bottom (u=v=w=0 on the axis for n>=2)
+    const free = []; for (let i = 0; i < nd; i++) if (!fixed.has(i)) free.push(i);
+    const Kr = mat(free.length, free.length), Mr = mat(free.length, free.length);
+    for (let i = 0; i < free.length; i++) for (let j = 0; j < free.length; j++) { Kr[i][j] = K[free[i]][free[j]]; Mr[i][j] = M[free[i]][free[j]]; }
+    const sol = genEig(Kr, Mr, nKeep);
+    return sol.map(m => {
+      const x = new Float64Array(nd); free.forEach((gi, i) => x[gi] = m.x[i]);
+      return { n, omega: Math.sqrt(Math.max(m.lambda, 0)), x, nodes };
+    });
+  }
+
+  // evaluate a mode's fields at arclength s
+  function modeAt(mode, s, out) {
+    const nodes = mode.nodes, Ne = nodes.length - 1;
+    let e = 0, lo = 0, hi = Ne; if (s >= nodes[Ne]) e = Ne - 1; else { while (hi - lo > 1) { const m = (lo + hi) >> 1; if (nodes[m] <= s) lo = m; else hi = m; } e = lo; }
+    const h = nodes[e + 1] - nodes[e], x = Math.min(1, Math.max(0, (s - nodes[e]) / h));
+    const N = _N, dN = _dN, ddN = _ddN; hermite(x, h, N, dN, ddN);
+    const b = 6 * e, X = mode.x; out = out || {};
+    const f = (off, arr) => arr[0] * X[b + off] + arr[1] * X[b + off + 1] + arr[2] * X[b + 6 + off] + arr[3] * X[b + 6 + off + 1];
+    out.U = f(0, N); out.Up = f(0, dN); out.V = f(2, N); out.Vp = f(2, dN); out.W = f(4, N); out.Wp = f(4, dN);
+    return out;
+  }
+  const _N = new Float64Array(4), _dN = new Float64Array(4), _ddN = new Float64Array(4);
+
+  // ---------------------------------------------------------- liquid (Ritz)
+  function liquidCoupling(geo, n, dry, hLevel, opts) {
+    opts = opts || {};
+    const zf = geo.zFloor, H = hLevel - zf;
+    if (H < 1e-4) return null;
+    const Np = opts.Np || 6, Nq = opts.Nq || 6, Nb = Np * Nq;
+    const top = geo.innerAtZ(hLevel), sH = top.s;
+    let Rs = top.r; for (let i = 0; i <= 40; i++) Rs = Math.max(Rs, geo.innerAtZ(zf + H * i / 40).r);
+    const Pp = new Float64Array(Np), dPp = new Float64Array(Np), Pq = new Float64Array(Nq), dPq = new Float64Array(Nq);
+    const phi = new Float64Array(Nb), phR = new Float64Array(Nb), phZ = new Float64Array(Nb), phOr = new Float64Array(Nb);
+    function basis(r, z) {
+      const rho = r / Rs, X = 2 * rho * rho - 1, zh = Math.max(0, (z - zf) / H), Y = 2 * zh - 1, hz = hLevel - z;
+      legendre(Np, X, Pp, dPp); legendre(Nq, Y, Pq, dPq);
+      const rn = Math.pow(rho, n), rn1 = n > 0 ? Math.pow(rho, n - 1) : 0;
+      for (let p = 0; p < Np; p++) for (let qq = 0; qq < Nq; qq++) {
+        const k = p * Nq + qq, PP = Pp[p], PQ = Pq[qq];
+        phi[k] = hz * rn * PP * PQ;
+        phOr[k] = hz * rn1 / Rs * PP * PQ;                       // phi / r
+        phR[k] = hz * PQ * (n * rn1 / Rs * PP + rn * dPp[p] * 4 * rho / Rs);
+        phZ[k] = rn * PP * (-PQ + hz * dPq[qq] * 2 / H);
+      }
+    }
+    // stiffness-like matrix A = pi * int (grad phi_k . grad phi_l) r dr dz
+    const A = mat(Nb, Nb), qz = GL(4), qr = GL(16), NZ = 14;
+    let vol = 0;
+    for (let iz = 0; iz < NZ; iz++) for (let a = 0; a < qz.x.length; a++) {
+      const u = (iz + 0.5 * (qz.x[a] + 1)) / NZ, wu = 0.5 * qz.w[a] / NZ;
+      const z = zf + H * u * u, wz = wu * 2 * H * u, R = geo.innerAtZ(z).r;
+      vol += Math.PI * R * R * wz;
+      for (let b = 0; b < qr.x.length; b++) {
+        const r = 0.5 * R * (qr.x[b] + 1), w = Math.PI * wz * 0.5 * R * qr.w[b] * r;
+        basis(r, z);
+        for (let k = 0; k < Nb; k++) {
+          const ak = phR[k] * w, bk = phZ[k] * w, ck = n * n * phOr[k] * w, Ak = A[k];
+          for (let l = 0; l <= k; l++) Ak[l] += ak * phR[l] + bk * phZ[l] + ck * phOr[l];
+        }
+      }
+    }
+    let tr = 0; for (let k = 0; k < Nb; k++) { for (let l = 0; l < k; l++) A[l][k] = A[k][l]; tr += A[k][k]; }
+    for (let k = 0; k < Nb; k++) A[k][k] += 1e-11 * tr / Nb;
+    const LA = cholesky(A);
+    // wall integrals over the wetted inner surface
+    const nm = dry.length, qs = GL(4), NS = 36, wall = [];
+    const bvec = Array.from({ length: nm }, () => new Float64Array(Nb)), fld = {};
+    for (let is = 0; is < NS; is++) for (let a = 0; a < qs.x.length; a++) {
+      const s = sH * (is + 0.5 * (qs.x[a] + 1)) / NS, ws = sH * 0.5 * qs.w[a] / NS, g = geo.at(s);
+      const r = g.r - 0.5 * g.t * g.sn, z = Math.min(hLevel, g.z + 0.5 * g.t * g.c);
+      basis(r, z);
+      const pt = { w: ws, r, phi: Float64Array.from(phi), dphiT: new Float64Array(Nb), phOr: Float64Array.from(phOr), U: new Float64Array(nm), V: new Float64Array(nm) };
+      for (let k = 0; k < Nb; k++) pt.dphiT[k] = phR[k] * g.c + phZ[k] * g.sn;
+      for (let m = 0; m < nm; m++) {
+        modeAt(dry[m], s, fld); pt.U[m] = fld.U; pt.V[m] = fld.V;
+        const f = Math.PI * ws * fld.W * r, bm = bvec[m];
+        for (let k = 0; k < Nb; k++) bm[k] += f * phi[k];
+      }
+      wall.push(pt);
+    }
+    const cvec = bvec.map(b => cholSolve(LA, b));
+    const Mf = mat(nm, nm);
+    for (let i = 0; i < nm; i++) for (let j = 0; j < nm; j++) { let s = 0; for (let k = 0; k < Nb; k++) s += bvec[i][k] * cvec[j][k]; Mf[i][j] = s; }
+    for (let i = 0; i < nm; i++) for (let j = 0; j < i; j++) { const a = 0.5 * (Mf[i][j] + Mf[j][i]); Mf[i][j] = a; Mf[j][i] = a; }
+    // slip-velocity fields (fluid tangential velocity minus wall velocity) per dry mode at wall points
+    for (const pt of wall) {
+      pt.fs = new Float64Array(nm); pt.ft = new Float64Array(nm);
+      for (let m = 0; m < nm; m++) {
+        let a = 0, b = 0; const c = cvec[m];
+        for (let k = 0; k < Nb; k++) { a += c[k] * pt.dphiT[k]; b += c[k] * pt.phOr[k]; }
+        pt.fs[m] = a - pt.U[m]; pt.ft[m] = -n * b - pt.V[m];
+      }
+      delete pt.phi; delete pt.dphiT; delete pt.phOr;
+    }
+    return { Mf, wall, sH, vol };
+  }
+
+  // ------------------------------------------------------------- materials
+  const MATERIALS = {
+    leadCrystal: { name: 'Lead crystal (24–30% PbO)', E: 58e9, rho: 3050, nu: 0.23, eta: 2.5e-4 },
+    sodaLime: { name: 'Soda-lime glass', E: 72e9, rho: 2500, nu: 0.22, eta: 1.0e-3 },
+    borosilicate: { name: 'Borosilicate', E: 64e9, rho: 2230, nu: 0.20, eta: 5.0e-4 },
+    fusedQuartz: { name: 'Fused quartz', E: 72.5e9, rho: 2200, nu: 0.17, eta: 4.0e-6, kind: 'both' },
+    bellBronze: { name: 'Bell bronze (≈78% Cu / 22% Sn)', E: 1.05e11, rho: 8700, nu: 0.34, eta: 2.0e-4, kind: 'bowl' },
+    himalayan: { name: 'Antique Himalayan alloy (measured E≈77 GPa)', E: 7.7e10, rho: 8890, nu: 0.34, eta: 3.0e-4, kind: 'bowl' },
+    brass: { name: 'Brass (machine-made)', E: 1.0e11, rho: 8500, nu: 0.34, eta: 8.0e-4, kind: 'bowl' },
+  };
+  for (const k of ['leadCrystal', 'sodaLime', 'borosilicate']) MATERIALS[k].kind = 'glass';
+  const SHAPES = {
+    bordeaux: { name: 'Bordeaux', P: [[4.5, 0], [42, 0], [52, 62], [36, 102]] },
+    burgundy: { name: 'Burgundy balloon', P: [[4.5, 0], [58, 0], [64, 70], [40, 100]] },
+    tulip: { name: 'Tulip (flared rim)', P: [[4.5, 0], [40, 0], [26, 70], [38, 108]] },
+    snifter: { name: 'Brandy snifter', P: [[4.5, 0], [62, 0], [70, 78], [31, 102]] },
+    flute: { name: 'Champagne flute', P: [[3.5, 0], [18, 0], [27, 85], [25, 165]] },
+    // singing bowls: closed bottom (pole), free on a cushion, thickened rim lip; thickness in mm scales with size
+    thadobati: { name: 'Thadobati (straight wall, Ø18 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [70, 0], [92, 20], [88, 75]], t: { wall: 2.6, base: 3.5, lip: 4.5, lipLen: 6 } },
+    jambati: { name: 'Jambati (large, heavy, Ø27 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [95, 0], [150, 45], [135, 110]], t: { wall: 3.2, base: 4.5, lip: 5.5, lipLen: 8 } },
+    manipuri: { name: 'Manipuri (wide & shallow, Ø22 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [80, 0], [115, 15], [108, 55]], t: { wall: 2.2, base: 3.2, lip: 3.6, lipLen: 5 } },
+    hand: { name: 'Small hand bowl (Ø12 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [40, 0], [64, 25], [60, 55]], t: { wall: 2.0, base: 3.0, lip: 3.0, lipLen: 4 } },
+    crystal: { name: 'Frosted quartz crystal bowl (Ø25 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [100, 0], [126, 8], [125, 180]], t: { wall: 6.0, base: 7.0, lip: 6.0, lipLen: 4 }, mat: 'fusedQuartz' },
+  };
+  for (const k of ['bordeaux', 'burgundy', 'tulip', 'snifter', 'flute']) SHAPES[k].kind = 'glass';
+  const AIR = { rho: 1.204, c: 343.2 };
+  const WATER = { rho: 998, nu: 1.0e-6 };
+
+  // ----------------------------------------------------------- top level
+  // Build dry modal model of the glass (expensive; on shape/material change)
+  function buildGlass(cfg) {
+    const shape = SHAPES[cfg.shape] || SHAPES.bordeaux, m = MATERIALS[cfg.material] || MATERIALS.leadCrystal;
+    const tRim = cfg.tRim || 1.2e-3, tBase = tRim * (cfg.baseRatio || 2.4);
+    let thickFn = null;
+    if (shape.t) {                                    // bowl: wall + thicker base + thickened lip, scaled with size
+      const T = shape.t, k = 1e-3 * (cfg.scale || 1) * (cfg.tScale || 1), lipLen = T.lipLen * 1e-3 * (cfg.scale || 1);
+      thickFn = (s, L) => k * (T.wall + (T.base - T.wall) * Math.pow(1 - s / L, 3) + (T.lip - T.wall) * Math.exp(-(L - s) / lipLen));
+    }
+    const geo = makeGeometry(shape.P, cfg.scale || 1, tRim, tBase, thickFn);
+    const orders = cfg.orders || [2, 3, 4, 5, 6], byN = {};
+    for (const n of orders) byN[n] = shellModes(geo, m, n, { Ne: cfg.Ne || 36, nKeep: cfg.nKeep || 8, bc: shape.bc });
+    return { cfg, geo, mat: m, shape, byN, orders };
+  }
+
+  // Wet modes + losses for a fill fraction (cheap; live while dragging)
+  function wetModes(glass, fill, opts) {
+    opts = opts || {};
+    const { geo, mat: m } = glass, fmax = opts.fmax || 15000, perN = opts.perN || 3, listenerR = opts.listenerR || 0.5;
+    const h = geo.zFloor + fill * (geo.zRimIn - geo.zFloor);
+    const out = []; let vol = 0, sH = 0;
+    const qs = GL(4), NS = 30, fld = {};
+    for (const n of (opts.orders || glass.orders)) {
+      const dry = glass.byN[n], nm = dry.length;
+      const liq = fill > 0.003 ? liquidCoupling(geo, n, dry, h) : null;
+      if (liq) { vol = liq.vol; sH = liq.sH; }
+      let modes;
+      if (liq) {
+        const Kr = mat(nm, nm), Mr = mat(nm, nm);
+        for (let i = 0; i < nm; i++) { Kr[i][i] = dry[i].omega * dry[i].omega; for (let j = 0; j < nm; j++) Mr[i][j] = (i === j ? 1 : 0) + WATER.rho * liq.Mf[i][j]; }
+        modes = genEig(Kr, Mr, nm).map(s => ({ omega: Math.sqrt(s.lambda), X: s.x }));
+      } else modes = dry.map((d, i) => { const X = new Float64Array(nm); X[i] = 1; return { omega: d.omega, X }; });
+      const dryOmega = dry.map(d => d.omega);
+      let count = 0;
+      for (let j = 0; j < modes.length && count < perN; j++) {
+        const { omega, X } = modes[j], f = omega / (2 * Math.PI);
+        if (f > fmax) break;
+        // fields of the wet mode at rim, waterline; radiation integral over outer surface
+        const comb = s => { let U = 0, V = 0, W = 0; for (let i = 0; i < nm; i++) { modeAt(dry[i], s, fld); U += X[i] * fld.U; V += X[i] * fld.V; W += X[i] * fld.W; } return { U, V, W }; };
+        const sC = Math.max(0, geo.L - (opts.contactDepth || 0)), rim = comb(sC), gR = sC < geo.L ? geo.at(sC) : geo.rim;
+        const rimR = rim.U * gR.c + rim.W * gR.sn, rimA = rim.U * gR.sn - rim.W * gR.c;
+        const kAir = omega / AIR.c;
+        let cRad = 0;
+        for (let is = 0; is < NS; is++) for (let a = 0; a < qs.x.length; a++) {
+          const s = geo.L * (is + 0.5 * (qs.x[a] + 1)) / NS, ws = geo.L * 0.5 * qs.w[a] / NS, g = geo.at(s), F = comb(s);
+          const ro = g.r + 0.5 * g.t * g.sn, vr = F.W * g.sn + F.U * g.c;
+          cRad += Math.PI * ws * radResistance(n, kAir * ro, AIR.rho * AIR.c) * vr * vr * ro * g.sn; // strip of height ds*sin(psi)
+        }
+        let cVis = 0;
+        if (liq) {
+          let I = 0;
+          for (const pt of liq.wall) { let ds = 0, dt = 0; for (let i = 0; i < nm; i++) { ds += X[i] * pt.fs[i]; dt += X[i] * pt.ft[i]; } I += Math.PI * pt.w * (ds * ds + dt * dt) * pt.r; }
+          cVis = WATER.rho * Math.sqrt(WATER.nu * omega / 2) * I;
+        }
+        let wl = 0; if (liq) { const F = comb(sH), g = geo.at(sH); wl = F.W * g.sn + F.U * g.c; }
+        let shape = null;
+        if (opts.shapes) { const NSH = 48; shape = new Float32Array(NSH + 1); for (let i = 0; i <= NSH; i++) { const F = comb(geo.L * i / NSH); shape[i] = F.W; } }
+        const zMat = m.eta / 2, zRad = cRad / (2 * omega), zVis = cVis / (2 * omega), zSup = glass.shape.bc === 'pole' ? 4e-5 : 1.5e-5;     // bowl on a cushion vs. glass on its foot
+        const zeta = zMat + zRad + zVis + zSup;
+        out.push({
+          key: n + ':' + j, n, m: j, f, omega, fDry: dryOmega[j] / (2 * Math.PI),
+          zeta, Q: 1 / (2 * zeta), zMat, zRad, zVis, zSup,
+          rimV: rim.V, rimR, rimA, wl, shape,
+          G: Math.sqrt(2 * AIR.rho * AIR.c * cRad / (4 * Math.PI * listenerR * listenerR)),
+        });
+        count++;
+      }
+    }
+    return { modes: out.sort((a, b) => a.f - b.f), h, volume: vol, sH, fill, contactS: Math.max(0, geo.L - (opts.contactDepth || 0)) };
+  }
+
+  // quick profile sampler for drawing (mm)
+  function profile(glass, N) {
+    const g = glass.geo, pts = [];
+    for (let i = 0; i <= N; i++) { const s = g.L * i / N, a = g.at(s); pts.push({ r: a.r, z: a.z, t: a.t, c: a.c, sn: a.sn }); }
+    return pts;
+  }
+
+  // ------------------------------------------------- multi-glass service (worker-friendly)
+  function makeService() {
+    const store = new Map(), baseF = new Map();
+    const strip = m => { const { shape, ...r } = m; return r; };
+    function f2(glass, fill) { const w = wetModes(glass, fill, { perN: 1, fmax: 6000, orders: [2] }); return w.modes.length ? w.modes[0].f : NaN; }
+    function build(id, cfg) {
+      const glass = buildGlass(Object.assign({ Ne: 30, nKeep: 6 }, cfg));
+      const N = 38, fills = [], hz = [];
+      for (let i = 0; i <= N; i++) { const f = 0.95 * i / N; fills.push(f); hz.push(f2(glass, f)); }
+      const G = { glass, cfg, fills, hz }; store.set(id, G); return G;
+    }
+    function info(G) { const g = G.glass.geo; return { rimR: g.rimR, rMax: g.rMaxOuter, rimT: g.rim.t, fDry: G.hz[0], fFull: G.hz[G.hz.length - 1], scale: G.cfg.scale || 1 }; }
+    function wet(G, fill) {
+      const w = wetModes(G.glass, fill, { perN: 1, fmax: 12000 }), g = G.glass.geo;
+      const m2 = w.modes.find(m => m.n === 2);
+      return { fill, modes: w.modes.map(strip), volume: w.volume, waterR: fill > 0.003 ? g.innerAtZ(w.h).r : 0, f: m2 ? m2.f : NaN };
+    }
+    function fillFor(G, hz) {
+      const H = G.hz, F = G.fills, n = H.length - 1;
+      if (hz >= H[0]) return { fill: 0, ok: hz <= H[0] * 1.003 };
+      if (hz <= H[n]) return { fill: F[n], ok: hz >= H[n] * 0.997 };
+      let i = 0; while (H[i + 1] > hz) i++;
+      let a = F[i], b = F[i + 1], fa = H[i] - hz, fb = H[i + 1] - hz, x = a + (b - a) * fa / (fa - fb);
+      for (let it = 0; it < 2; it++) {                    // secant polish against the full solve
+        const fx = f2(G.glass, x) - hz; if (Math.abs(fx) < 0.02) break;
+        if (fx > 0) { a = x; fa = fx; } else { b = x; fb = fx; }
+        x = a + (b - a) * fa / (fa - fb);
+      }
+      return { fill: x, ok: true };
+    }
+    function scaleFor(cfg, hz, ratio) {                  // shell freq ~ t/R^2, refined by actual solves
+      const key = cfg.shape + '|' + cfg.material + '|' + cfg.tRim;
+      let f1 = baseF.get(key);
+      if (!f1) { f1 = buildGlass(Object.assign({}, cfg, { scale: 1, orders: [2], Ne: 24, nKeep: 2 })).byN[2][0].omega / (2 * Math.PI); baseF.set(key, f1); }
+      const want = hz / ratio; let s = Math.sqrt(f1 / want);
+      s = Math.min(1.6, Math.max(0.5, s));
+      const fs = buildGlass(Object.assign({}, cfg, { scale: s, orders: [2], Ne: 24, nKeep: 2 })).byN[2][0].omega / (2 * Math.PI);
+      s = Math.min(1.6, Math.max(0.5, s * Math.sqrt(fs / want)));
+      return s;
+    }
+    function handle(m) {
+      switch (m.cmd) {
+        case 'build': { const G = build(m.id, m.cfg); return { id: m.id, info: info(G), wet: wet(G, m.fill || 0) }; }
+        case 'fill': { const G = store.get(m.id); return { id: m.id, wet: wet(G, m.fill) }; }
+        case 'tune': { const G = store.get(m.id), r = fillFor(G, m.hz); return { id: m.id, inRange: r.ok, wet: wet(G, r.fill) }; }
+        case 'fit': {
+          const cfg = Object.assign({}, m.cfg); cfg.scale = scaleFor(cfg, m.hz, m.ratio || 0.86);
+          const G = build(m.id, cfg), r = fillFor(G, m.hz);
+          return { id: m.id, info: info(G), inRange: r.ok, wet: wet(G, r.fill) };
+        }
+      }
+      return { id: m.id, error: 'unknown cmd' };
+    }
+    return { handle };
+  }
+
+  const api = { makeService, buildGlass, wetModes, profile, MATERIALS, SHAPES, AIR, WATER, _t: { makeGeometry, shellModes, liquidCoupling, besselJ, besselY, radResistance, genEig, symEig, modeAt, cholesky, cholSolve, GL } };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GlassPhysics = api;
+})(typeof self !== 'undefined' ? self : this);
+</script>
+<script>window.GH = { kind: 'bowl' };</script>
+<script>(() => {
+  'use strict';
+  const GP = window.GlassPhysics;
+  const $ = id => document.getElementById(id);
+  const TAU = Math.PI * 2;
+  const wrap = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
+  const ALPHA = 0.37;            // orientation of the glass's tiny asymmetry
+  const BOWL = (window.GH && window.GH.kind) === 'bowl';
+  const EXAG = BOWL ? 8 : 35;    // visual exaggeration of rim motion
+  const OUT_PA = 0.8;            // pressure (Pa) that maps to digital full scale before volume
+
+  const S = BOWL
+    ? { shape: 'thadobati', material: 'bellBronze', tScale: 1, scale: 1, fill: 0, FN: 4.0, stick: 'leather', side: 1, mallet: 'felt', split: 4e-3, reverb: 0.3, vol: 0.8 }
+    : { shape: 'bordeaux', material: 'leadCrystal', tRim: 1.2e-3, scale: 1, fill: 0, FN: 1.0, cond: 'wet', split: 3e-4, reverb: 0.25, vol: 0.8 };
+  const kindOK = v => (v.kind || 'glass') === (BOWL ? 'bowl' : 'glass') || v.kind === 'both';
+  let glass = null, wet = null, modeByKey = new Map(), prof = null, curve = null, curveJob = 0;
+  let audio = null, snap = null, started = false;
+
+  // ------------------------------------------------------------ UI wiring
+  const shapeSel = $('shape'), matSel = $('material');
+  for (const [k, v] of Object.entries(GP.SHAPES)) if (kindOK(v)) shapeSel.add(new Option(v.name, k));
+  for (const [k, v] of Object.entries(GP.MATERIALS)) if (kindOK(v)) matSel.add(new Option(v.name, k));
+  shapeSel.value = S.shape; matSel.value = S.material;
+
+  function paintRange(el) { const p = (el.value - el.min) / (el.max - el.min) * 100; el.style.setProperty('--p', p + '%'); }
+  document.querySelectorAll('input[type=range]').forEach(el => { paintRange(el); el.addEventListener('input', () => paintRange(el)); });
+
+  let rebuildT = 0;
+  const scheduleRebuild = () => { clearTimeout(rebuildT); rebuildT = setTimeout(build, 220); };
+  shapeSel.onchange = () => { S.shape = shapeSel.value; const sm = GP.SHAPES[S.shape].mat; if (sm) { S.material = sm; matSel.value = sm; } else if (BOWL && S.material === 'fusedQuartz') { S.material = 'bellBronze'; matSel.value = 'bellBronze'; } build(); };
+  matSel.onchange = () => { S.material = matSel.value; build(); };
+  $('thick').oninput = e => { if (BOWL) { S.tScale = +e.target.value; $('thickOut').textContent = '×' + S.tScale.toFixed(2); } else { S.tRim = +e.target.value * 1e-3; $('thickOut').textContent = (+e.target.value).toFixed(2) + ' mm'; } scheduleRebuild(); };
+  $('size').oninput = e => { S.scale = +e.target.value / 100; $('sizeOut').textContent = e.target.value + '%'; scheduleRebuild(); };
+  $('press').oninput = e => { S.FN = +e.target.value; $('pressOut').textContent = S.FN.toFixed(BOWL ? 1 : 2) + ' N'; send({ t: 'finger', f: { FN: S.FN } }); };
+  $('split').oninput = e => { S.split = +e.target.value / 100; $('splitOut').textContent = (+e.target.value).toFixed(3) + '%'; sendModes(); };
+  $('reverb').oninput = e => { S.reverb = +e.target.value / 100; $('reverbOut').textContent = e.target.value + '%'; applyMix(); };
+  $('vol').oninput = e => { S.vol = +e.target.value / 100; $('volOut').textContent = e.target.value + '%'; applyMix(); };
+  let fillRAF = 0;
+  function setFill(f, fromSlider) {
+    S.fill = Math.max(0, Math.min(0.95, f));
+    if (!fromSlider) { $('fill').value = (S.fill * 100).toFixed(1); paintRange($('fill')); }
+    if (!fillRAF) fillRAF = requestAnimationFrame(() => { fillRAF = 0; if (glass) updateWet(); });
+  }
+  $('fill').oninput = e => setFill(+e.target.value / 100, true);
+  const seg = (id, fn) => document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b)); fn(b.dataset.v);
+  });
+  if (BOWL) {
+    seg('stick', v => { S.stick = v; sendExciter(); });
+    seg('sideSel', v => { S.side = +v; sendExciter(); });
+    seg('mallet', v => { S.mallet = v; });
+  } else seg('cond', v => { S.cond = v; send({ t: 'finger', f: { cond: S.cond } }); });
+  function sendExciter() { if (BOWL) send({ t: 'exciter', e: { kind: 'puja', stick: S.stick, side: S.side } }); }
+  const MALLET = { felt: { force: 45, dur: 2.5e-3 }, wood: { force: 70, dur: 4e-4 } };
+
+  // ------------------------------------------------------------ physics
+  function busy(on, msg) { $('busy').classList.toggle('on', on); if (msg) $('busyMsg').textContent = msg; }
+  function build() {
+    busy(true, 'Solving shell modes…');
+    setTimeout(() => {
+      const t0 = performance.now();
+      glass = GP.buildGlass(BOWL ? { shape: S.shape, material: S.material, scale: S.scale, tScale: S.tScale, Ne: 36, nKeep: 8 } : { shape: S.shape, material: S.material, tRim: S.tRim, scale: S.scale, Ne: 36, nKeep: 8 });
+      prof = GP.profile(glass, 120);
+      updateWet();
+      busy(false);
+      console.log('shell solve', (performance.now() - t0).toFixed(0), 'ms');
+      computeCurve();
+    }, 30);
+  }
+  function updateWet() {
+    wet = GP.wetModes(glass, S.fill, BOWL ? { perN: 2, fmax: 9000, shapes: true, contactDepth: 0.015 * S.scale } : { perN: 2, fmax: 12000, shapes: true });
+    wet.rc = glass.geo.at(wet.contactS).r;
+    modeByKey = new Map(wet.modes.map(m => [m.key, m]));
+    $('fillOut').textContent = `${Math.round(S.fill * 100)}% · ${Math.round(wet.volume * 1e6)} mL`;
+    sendModes(); renderTable(); if (curve) drawCurve();
+  }
+  function sendModes() {
+    if (!wet) return;
+    const modes = wet.modes.map(({ shape, ...m }) => m);
+    send({ t: 'modes', modes, opt: { split: S.split, alpha: ALPHA, Rrim: wet.rc || glass.geo.rimR } });
+  }
+  function computeCurve() {
+    const job = ++curveJob, g = glass, pts = [], N = 24;
+    let i = 0;
+    const step = () => {
+      if (job !== curveJob) return;
+      const f = 0.95 * i / N, w = GP.wetModes(g, f, { perN: 1, fmax: 3000 });
+      const m = w.modes.find(x => x.n === 2);
+      pts.push({ f, hz: m ? m.f : NaN });
+      if (++i <= N) setTimeout(step, 0); else { curve = pts; drawCurve(); }
+    };
+    curve = null; step();
+  }
+
+  // ------------------------------------------------------------ table
+  function renderTable() {
+    const tb = $('modeTable').tBodies[0]; tb.innerHTML = '';
+    for (const m of wet.modes) {
+      const tot = m.zeta, tr = document.createElement('tr'); tr.dataset.key = m.key;
+      const pc = x => (100 * x / tot).toFixed(1) + '%';
+      tr.innerHTML = `<td>(${m.n},${m.m})</td><td>${fmtHz(m.f)}</td><td>${fmtHz(m.fDry)}</td><td>${Math.round(m.Q)}</td>` +
+        `<td class="bar"><div class="lb" title="material ${pc(m.zMat)} · radiation ${pc(m.zRad)} · water ${pc(m.zVis)} · support ${pc(m.zSup)}"><i class="l-mat" style="width:${pc(m.zMat)}"></i><i class="l-rad" style="width:${pc(m.zRad)}"></i><i class="l-vis" style="width:${pc(m.zVis)}"></i><i class="l-sup" style="width:${pc(m.zSup)}"></i></div></td>`;
+      tb.appendChild(tr);
+    }
+  }
+  const fmtHz = f => f >= 1000 ? (f / 1000).toFixed(2) + ' k' : f.toFixed(1);
+  const NOTES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+  function noteName(f) { const m = 69 + 12 * Math.log2(f / 440), r = Math.round(m), c = Math.round((m - r) * 100); return NOTES[(r % 12 + 12) % 12] + (Math.floor(r / 12) - 1) + (c >= 0 ? ' +' : ' −') + Math.abs(c) + '¢'; }
+
+  // ------------------------------------------------------------ audio
+  function send(m) { if (audio) audio.send(m); }
+  const WRAP = `
+class GlassProc extends AudioWorkletProcessor {
+  constructor() { super(); this.v = new globalThis.GlassDSP.GlassVoice(sampleRate); this.n = 0;
+    this.port.onmessage = e => { const m = e.data;
+      if (m.t === 'modes') this.v.setModes(m.modes, m.opt); else if (m.t === 'finger') this.v.setFinger(m.f); else if (m.t === 'exciter') this.v.setExciter(m.e);
+      else if (m.t === 'tap') this.v.tap(m.theta, m.force, m.dur); else if (m.t === 'gain') this.v.gain = m.g; }; }
+  process(inp, out) { const o = out[0]; const L = o[0], R = o[1] || o[0]; this.v.process(L, R, L.length);
+    if (++this.n % 5 === 0) this.port.postMessage(this.v.snapshot()); return true; }
+}
+registerProcessor('glass-proc', GlassProc);`;
+
+  function makeIR(ctx, secs) {
+    const sr = ctx.sampleRate, n = Math.floor(sr * secs), b = ctx.createBuffer(2, n, sr);
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c); let lp = 0;
+      for (let i = 0; i < n; i++) {
+        const t = i / sr, k = Math.min(0.92, 0.2 + t * 0.9);      // highs decay faster
+        lp = lp * k + (Math.random() * 2 - 1) * (1 - k);
+        d[i] = lp * Math.exp(-6.9 * t / secs) * (t < 0.012 ? 0 : 1) * 2.2;
+      }
+      for (const [dt, a] of [[0.013, 0.5], [0.021, 0.35], [0.034, 0.25], [0.047, 0.2]]) { const j = Math.floor((dt + c * 0.003) * sr); if (j < n) d[j] += a; }
+    }
+    return b;
+  }
+
+  async function startAudio() {
+    if (audio) { if (audio.ctx.state !== 'running') audio.ctx.resume(); return; }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AC({ latencyHint: 'interactive' });
+    const queue = []; audio = { ctx, send: m => queue.push(m) };
+    ctx.resume();
+    const src = $('dsp-src').textContent;
+    const master = ctx.createGain(), comp = ctx.createDynamicsCompressor(), dry = ctx.createGain(), wetG = ctx.createGain(), conv = ctx.createConvolver();
+    comp.threshold.value = -8; comp.knee.value = 6; comp.ratio.value = 10; comp.attack.value = 0.002; comp.release.value = 0.2;
+    conv.buffer = makeIR(ctx, 2.2);
+    dry.connect(comp); conv.connect(wetG); wetG.connect(comp); comp.connect(master); master.connect(ctx.destination);
+    audio.master = master; audio.dry = dry; audio.wetG = wetG;
+    let node;
+    try {
+      const url = URL.createObjectURL(new Blob([src + '\n' + WRAP], { type: 'application/javascript' }));
+      await ctx.audioWorklet.addModule(url);
+      node = new AudioWorkletNode(ctx, 'glass-proc', { numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [2] });
+      node.port.onmessage = e => { snap = e.data; };
+      audio.send = m => node.port.postMessage(m);
+    } catch (err) {
+      console.warn('AudioWorklet unavailable, using ScriptProcessor', err);
+      if (!window.GlassDSP) (new Function(src))();
+      const V = new window.GlassDSP.GlassVoice(ctx.sampleRate);
+      node = ctx.createScriptProcessor(512, 0, 2);
+      node.onaudioprocess = e => { V.process(e.outputBuffer.getChannelData(0), e.outputBuffer.getChannelData(1), e.outputBuffer.length); snap = V.snapshot(); };
+      audio.send = m => { if (m.t === 'modes') V.setModes(m.modes, m.opt); else if (m.t === 'finger') V.setFinger(m.f); else if (m.t === 'exciter') V.setExciter(m.e); else if (m.t === 'tap') V.tap(m.theta, m.force, m.dur); else if (m.t === 'gain') V.gain = m.g; };
+    }
+    node.connect(dry); node.connect(conv);
+    audio.node = node;
+    applyMix();
+    send({ t: 'gain', g: 1 / OUT_PA });
+    if (BOWL) sendExciter(); else send({ t: 'finger', f: { FN: S.FN, cond: S.cond } });
+    send({ t: 'finger', f: { FN: S.FN } });
+    sendModes();
+    for (const m of queue) audio.send(m);
+  }
+  function applyMix() {
+    if (!audio || !audio.master) return;
+    const t = audio.ctx.currentTime;
+    audio.master.gain.setTargetAtTime(S.vol * S.vol * 1.4, t, 0.03);
+    audio.dry.gain.setTargetAtTime(1 - 0.55 * S.reverb, t, 0.03);
+    audio.wetG.gain.setTargetAtTime(0.9 * S.reverb, t, 0.03);
+  }
+
+  // ------------------------------------------------------------ top view
+  const top = $('top'), tctx = top.getContext('2d');
+  let W = 0, H = 0, dpr = 1, cx = 0, cy = 0, pxPerM = 1;
+  function resize() {
+    dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    const r = top.getBoundingClientRect(); W = r.width; H = r.height;
+    top.width = Math.round(W * dpr); top.height = Math.round(H * dpr);
+    for (const cv of [$('sideCv'), $('curveCv')]) { const b = cv.getBoundingClientRect(); cv.width = Math.round(b.width * dpr); cv.height = Math.round(b.height * dpr); }
+    drawCurve();
+  }
+  new ResizeObserver(resize).observe(document.body);
+
+  const FOOT_R = 0.039;
+  function layout() {
+    cx = W / 2; cy = H / 2;
+    const rMax = BOWL ? Math.max(glass.geo.rMaxOuter, glass.geo.rimR) * 1.18 : Math.max(glass.geo.rMaxOuter, FOOT_R * S.scale, glass.geo.rimR * 1.15);
+    pxPerM = 0.44 * Math.min(W, H) / rMax;
+  }
+
+  // pointer → finger
+  const P = { id: null, down: false, theta: 0, omega: 0, lastT: 0, lastTh: 0, mode: null, start: 0, moved: 0, x: 0, y: 0 };
+  function polar(e) { const r = top.getBoundingClientRect(); const x = e.clientX - r.left - cx, y = e.clientY - r.top - cy; return { r: Math.hypot(x, y) / pxPerM, th: Math.atan2(y, x), x, y }; }
+  top.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    startAudio();
+    if (!started) { started = true; $('hint').classList.add('gone'); }
+    if (!glass || P.id !== null) return;
+    const p = polar(e), R = glass.geo.rimR, tol = Math.max(0.2 * R, 22 / pxPerM);
+    if (Math.abs(p.r - R) <= tol || p.r > R) {
+      P.id = e.pointerId; top.setPointerCapture(e.pointerId); top.classList.add('rubbing');
+      P.mode = 'rub'; P.down = true; P.theta = p.th; P.lastTh = p.th; P.lastT = e.timeStamp; P.omega = 0;
+      send({ t: 'finger', f: { down: true, theta: p.th, omega: 0, FN: S.FN, cond: S.cond } });
+    } else {
+      // flick with a fingernail: force scales a little with how far out you tap
+      if (BOWL) { const M = MALLET[S.mallet]; send({ t: 'tap', theta: p.th, force: M.force * (0.5 + 0.5 * Math.min(1, p.r / R)), dur: M.dur }); }
+      else send({ t: 'tap', theta: p.th, force: 4 + 6 * Math.min(1, p.r / R) });
+      flashes.push({ th: p.th, r: p.r, t: performance.now() });
+    }
+  }, { passive: false });
+  top.addEventListener('pointermove', e => {
+    if (e.pointerId !== P.id || !P.down) return;
+    let evs = e.getCoalescedEvents ? e.getCoalescedEvents() : null; if (!evs || !evs.length) evs = [e];
+    for (const ev of evs) {
+      const p = polar(ev), dt = Math.max(1, ev.timeStamp - P.lastT) / 1000;
+      const d = wrap(p.th - P.lastTh);
+      const inst = d / dt, a = 1 - Math.exp(-dt / 0.045);
+      P.omega += (inst - P.omega) * a;
+      P.theta += d; P.lastTh = p.th; P.lastT = ev.timeStamp;
+    }
+    send({ t: 'finger', f: { theta: P.theta, omega: P.omega } });
+  });
+  function endPointer(e) {
+    if (e.pointerId !== P.id) return;
+    P.id = null; P.down = false; P.omega = 0; top.classList.remove('rubbing');
+    send({ t: 'finger', f: { down: false } });
+  }
+  top.addEventListener('pointerup', endPointer); top.addEventListener('pointercancel', endPointer);
+  document.addEventListener('keydown', e => { if (e.key === ' ' && audio) { send({ t: 'tap', theta: Math.PI / 2, force: 6 }); e.preventDefault(); } });
+
+  // visual state
+  const flashes = [], drops = [];
+  let strobe = 0, lastFrame = performance.now(), envSmooth = null;
+  const NTH = 240, envR = new Float64Array(NTH), dispR = new Float64Array(NTH), envW = new Float64Array(NTH);
+
+  function analyse() {
+    envR.fill(0); dispR.fill(0); envW.fill(0);
+    let dom = null, domA = 0, rimMax = 0;
+    if (!snap || !wet) return { dom, rimMax };
+    const pairs = new Map();
+    for (let k = 0; k < snap.keys.length; k++) {
+      const key = snap.keys[k], base = key.slice(0, -1), m = modeByKey.get(base); if (!m) continue;
+      let p = pairs.get(base); if (!p) { p = { m, a: [0, 0], b: [0, 0] }; pairs.set(base, p); }
+      const z = [snap.amps[2 * k], snap.amps[2 * k + 1]];
+      if (key.endsWith('B')) p.b = z; else p.a = z;
+    }
+    const cs = Math.cos(strobe), sn = Math.sin(strobe);
+    for (const p of pairs.values()) {
+      const { m, a, b } = p, amp = Math.hypot(a[0], a[1], b[0], b[1]) * Math.abs(m.rimR);
+      if (amp > domA) { domA = amp; dom = m; }
+      for (let i = 0; i < NTH; i++) {
+        const th = TAU * i / NTH - ALPHA, c = Math.cos(m.n * th), s = Math.sin(m.n * th);
+        const re = a[0] * c + b[0] * s, im = a[1] * c + b[1] * s;
+        const xr = m.rimR * re, xi = m.rimR * im;
+        envR[i] += xr * xr + xi * xi;
+        dispR[i] += xr * cs - xi * sn;
+        const wr = m.wl * re, wi = m.wl * im; envW[i] += wr * wr + wi * wi;
+      }
+    }
+    for (let i = 0; i < NTH; i++) { envR[i] = Math.sqrt(envR[i]); envW[i] = Math.sqrt(envW[i]); rimMax = Math.max(rimMax, envR[i]); }
+    return { dom, rimMax, pairs };
+  }
+
+  function drawTop(an, now) {
+    const c = tctx; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+    if (!glass) return;
+    layout();
+    const g = glass.geo, R = g.rimR * pxPerM, tr = g.rim.t * pxPerM;
+    // shadow on the table
+    const sh = c.createRadialGradient(cx + 10, cy + 16, R * 0.2, cx + 10, cy + 16, R * 1.5);
+    sh.addColorStop(0, 'rgba(0,0,0,.45)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = sh; c.beginPath(); c.arc(cx + 10, cy + 16, R * 1.5, 0, TAU); c.fill();
+    if (BOWL) drawBowlBody(c, g, R, tr);
+    else {
+    // foot (seen through the bowl)
+    const fR = FOOT_R * S.scale * pxPerM;
+    c.strokeStyle = 'rgba(200,220,245,.10)'; c.lineWidth = 1.2; c.beginPath(); c.arc(cx, cy, fR, 0, TAU); c.stroke();
+    c.strokeStyle = 'rgba(200,220,245,.05)'; c.lineWidth = 5; c.beginPath(); c.arc(cx, cy, fR - 3, 0, TAU); c.stroke();
+    // bowl belly
+    const bR = g.rMaxOuter * pxPerM;
+    if (bR > R + 2) {
+      const bg = c.createRadialGradient(cx, cy, R * 0.9, cx, cy, bR);
+      bg.addColorStop(0, 'rgba(210,230,255,0)'); bg.addColorStop(0.85, 'rgba(210,230,255,.07)'); bg.addColorStop(1, 'rgba(210,230,255,.16)');
+      c.fillStyle = bg; c.beginPath(); c.arc(cx, cy, bR, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(220,235,255,.22)'; c.lineWidth = 1; c.beginPath(); c.arc(cx, cy, bR, 0, TAU); c.stroke();
+    }
+    // bowl interior
+    const ig = c.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.05, cx, cy, R);
+    ig.addColorStop(0, 'rgba(230,240,255,.07)'); ig.addColorStop(0.7, 'rgba(160,190,230,.04)'); ig.addColorStop(1, 'rgba(200,220,255,.12)');
+    c.fillStyle = ig; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
+    // stem junction highlight
+    { const sr = Math.max(2, g.inner.r[0] * pxPerM), sg = c.createRadialGradient(cx, cy, 0, cx, cy, sr * 1.6); sg.addColorStop(0, 'rgba(230,240,255,.16)'); sg.addColorStop(1, 'rgba(230,240,255,0)'); c.fillStyle = sg; c.beginPath(); c.arc(cx, cy, sr * 1.6, 0, TAU); c.fill(); }
+    }
+    // water
+    if (S.fill > 0.003 && wet) {
+      const wR = g.innerAtZ(wet.h).r * pxPerM;
+      const wg = c.createRadialGradient(cx - wR * 0.25, cy - wR * 0.3, wR * 0.1, cx, cy, wR);
+      wg.addColorStop(0, 'rgba(90,180,230,.30)'); wg.addColorStop(0.8, 'rgba(40,120,180,.30)'); wg.addColorStop(1, 'rgba(120,200,240,.55)');
+      c.fillStyle = wg; c.beginPath(); c.arc(cx, cy, wR, 0, TAU); c.fill();
+      // meniscus
+      c.strokeStyle = 'rgba(170,225,255,.6)'; c.lineWidth = 1.2; c.beginPath(); c.arc(cx, cy, wR - 0.6, 0, TAU); c.stroke();
+      drawRipples(c, wR, now);
+    }
+    // vibration envelope band
+    const X = EXAG * pxPerM, lim = 0.16 * R;
+    if (an.rimMax * X > 0.3) {
+      c.fillStyle = BOWL ? 'rgba(255,214,140,.16)' : 'rgba(159,211,255,.13)';
+      c.beginPath();
+      for (let i = 0; i <= NTH; i++) { const k = i % NTH, th = TAU * k / NTH, d = Math.min(lim, envR[k] * X); const r = R + tr / 2 + d; i ? c.lineTo(cx + r * Math.cos(th), cy + r * Math.sin(th)) : c.moveTo(cx + r * Math.cos(th), cy + r * Math.sin(th)); }
+      for (let i = NTH; i >= 0; i--) { const k = i % NTH, th = TAU * k / NTH, d = Math.min(lim, envR[k] * X); const r = R - tr / 2 - d; c.lineTo(cx + r * Math.cos(th), cy + r * Math.sin(th)); }
+      c.closePath(); c.fill('evenodd');
+    }
+    // rim (deformed, strobed)
+    const rimPath = (off) => {
+      c.beginPath();
+      for (let i = 0; i <= NTH; i++) { const k = i % NTH, th = TAU * k / NTH, d = lim * Math.tanh(dispR[k] * X / lim), r = R + off + d; i ? c.lineTo(cx + r * Math.cos(th), cy + r * Math.sin(th)) : c.moveTo(cx + r * Math.cos(th), cy + r * Math.sin(th)); }
+    };
+    c.lineJoin = 'round';
+    if (BOWL) {
+      rimPath(0); c.strokeStyle = 'rgba(70,45,20,.9)'; c.lineWidth = Math.max(4, tr * 1.25); c.stroke();
+      rimPath(0); const rg = c.createLinearGradient(cx - R, cy - R, cx + R, cy + R); rg.addColorStop(0, '#f6d58e'); rg.addColorStop(0.45, '#b98a43'); rg.addColorStop(0.7, '#e9c47a'); rg.addColorStop(1, '#8a6330');
+      c.strokeStyle = rg; c.lineWidth = Math.max(3, tr * 0.95); c.stroke();
+      rimPath(-tr * 0.25); c.strokeStyle = 'rgba(255,240,200,.45)'; c.lineWidth = 1; c.stroke();
+    } else {
+    rimPath(0); c.strokeStyle = 'rgba(225,238,255,.20)'; c.lineWidth = Math.max(3, tr * 1.6); c.stroke();
+    rimPath(0); c.strokeStyle = 'rgba(240,248,255,.85)'; c.lineWidth = Math.max(1.4, tr * 0.7); c.stroke();
+    rimPath(-tr * 0.5); c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 1; c.stroke();
+    }
+    // nodes of the dominant mode
+    if (an.dom && an.rimMax * X > 1) {
+      const dm = an.pairs.get(an.dom.key);
+      if (dm) {
+        const n = an.dom.n, a = dm.a, b = dm.b;
+        // node angles where |a cos + b sin| is minimal → sample
+        c.fillStyle = 'rgba(242,195,139,.9)';
+        for (let i = 0; i < NTH; i++) {
+          const f = j => { const th = TAU * ((j + NTH) % NTH) / NTH - ALPHA, cc = Math.cos(n * th), ss = Math.sin(n * th); return Math.hypot(a[0] * cc + b[0] * ss, a[1] * cc + b[1] * ss); };
+          const v = f(i); if (v < f(i - 1) && v <= f(i + 1) && v < 0.35 * Math.hypot(a[0], a[1], b[0], b[1])) {
+            const th = TAU * i / NTH; c.beginPath(); c.arc(cx + (R + tr + 7) * Math.cos(th), cy + (R + tr + 7) * Math.sin(th), 2.2, 0, TAU); c.fill();
+          }
+        }
+      }
+    }
+    // tap flashes
+    for (let i = flashes.length - 1; i >= 0; i--) {
+      const f = flashes[i], age = (now - f.t) / 600; if (age > 1) { flashes.splice(i, 1); continue; }
+      const x = cx + R * Math.cos(f.th), y = cy + R * Math.sin(f.th);
+      c.strokeStyle = `rgba(242,195,139,${0.7 * (1 - age)})`; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, 6 + 30 * age, 0, TAU); c.stroke();
+    }
+    // finger / puja
+    const fd = snap && snap.down ? snap.theta : (P.down ? P.theta : null);
+    if (BOWL && fd != null && P.down) drawPuja(c, fd, R, tr, X);
+    else if (fd != null && P.down) {
+      const fx = cx + R * Math.cos(fd), fy = cy + R * Math.sin(fd), fr = Math.max(14, 0.0075 * pxPerM);
+      const fg = c.createRadialGradient(fx - fr * 0.3, fy - fr * 0.3, fr * 0.1, fx, fy, fr);
+      fg.addColorStop(0, 'rgba(246,214,190,.55)'); fg.addColorStop(1, 'rgba(220,170,140,.22)');
+      c.fillStyle = fg; c.beginPath(); c.arc(fx, fy, fr, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(255,235,220,.5)'; c.lineWidth = 1; c.stroke();
+      // ridges
+      c.save(); c.beginPath(); c.arc(fx, fy, fr, 0, TAU); c.clip();
+      c.strokeStyle = 'rgba(150,100,80,.18)'; c.lineWidth = 0.8;
+      for (let k = 1; k < 7; k++) { c.beginPath(); c.ellipse(fx, fy + fr * 0.15, fr * 0.16 * k, fr * 0.12 * k, fd, 0, TAU); c.stroke(); }
+      c.restore();
+    }
+    // listener marker
+    c.fillStyle = 'rgba(135,148,166,.5)'; c.font = '500 10px "IBM Plex Mono", monospace'; c.textAlign = 'center';
+    c.fillText('▲ mics', cx, H - 10);
+  }
+
+  // hand-hammered bronze, seen from above
+  let hammer = null;
+  function drawBowlBody(c, g, R, tr) {
+    const bR = Math.max(R, g.rMaxOuter * pxPerM);
+    // outer flank (visible where the belly is wider than the rim)
+    if (bR > R + 1) {
+      const og = c.createRadialGradient(cx - bR * 0.3, cy - bR * 0.3, R * 0.6, cx, cy, bR);
+      og.addColorStop(0, '#5b3f1d'); og.addColorStop(0.75, '#7a5427'); og.addColorStop(1, '#3b2710');
+      c.fillStyle = og; c.beginPath(); c.arc(cx, cy, bR, 0, TAU); c.fill();
+    }
+    // interior: warm bronze with a darker patina toward the bottom
+    const ig = c.createRadialGradient(cx - R * 0.25, cy - R * 0.3, R * 0.05, cx, cy, R);
+    ig.addColorStop(0, '#6b4a22'); ig.addColorStop(0.35, '#7d5a2b'); ig.addColorStop(0.8, '#a57a3c'); ig.addColorStop(1, '#c9a05a');
+    c.fillStyle = ig; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
+    // hammer marks (deterministic per bowl)
+    if (!hammer || hammer.key !== S.shape + S.scale) {
+      let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      hammer = { key: S.shape + S.scale, marks: Array.from({ length: 240 }, () => ({ r: Math.sqrt(rnd()) * 0.95, th: rnd() * TAU, s: 0.025 + 0.03 * rnd(), a: rnd() })) };
+    }
+    c.save(); c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.clip();
+    for (const m of hammer.marks) {
+      const x = cx + m.r * R * Math.cos(m.th), y = cy + m.r * R * Math.sin(m.th), s = m.s * R;
+      const hg = c.createRadialGradient(x - s * 0.35, y - s * 0.35, 0, x, y, s);
+      hg.addColorStop(0, `rgba(255,225,160,${0.04 + 0.05 * m.a})`); hg.addColorStop(0.7, 'rgba(255,225,160,0)'); hg.addColorStop(1, `rgba(40,25,10,${0.05 + 0.05 * m.a})`);
+      c.fillStyle = hg; c.beginPath(); c.ellipse(x, y, s * 1.3, s * 0.7, m.th + 1.2, 0, TAU); c.fill();
+    }
+    // lathe rings near the rim and the floor
+    c.strokeStyle = 'rgba(255,230,170,.10)'; c.lineWidth = 1;
+    for (const f of [0.93, 0.89, 0.86, 0.32, 0.28]) { c.beginPath(); c.arc(cx, cy, R * f, 0, TAU); c.stroke(); }
+    // specular sweep
+    const sg = c.createLinearGradient(cx - R, cy - R, cx + R, cy + R); sg.addColorStop(0.2, 'rgba(255,240,200,0)'); sg.addColorStop(0.42, 'rgba(255,240,200,.12)'); sg.addColorStop(0.5, 'rgba(255,240,200,0)');
+    c.fillStyle = sg; c.fillRect(cx - R, cy - R, 2 * R, 2 * R);
+    c.restore();
+  }
+  // puja: wooden stick seen end-on, held against the outside (or inside) of the wall
+  function drawPuja(c, th, R, tr, X) {
+    const side = S.side, rad = Math.max(10, 0.013 * pxPerM);
+    const jitter = snap ? snap.y * X * side : 0;                  // stick's radial motion, same exaggeration as the rim
+    const rr = R + side * (tr * 0.5 + rad) + Math.max(-rad, Math.min(rad, jitter));
+    const x = cx + rr * Math.cos(th), y = cy + rr * Math.sin(th);
+    const leather = S.stick === 'leather';
+    const g2 = c.createRadialGradient(x - rad * 0.3, y - rad * 0.3, rad * 0.1, x, y, rad);
+    if (leather) { g2.addColorStop(0, '#a1785a'); g2.addColorStop(1, '#5d3e2a'); } else { g2.addColorStop(0, '#d9b98a'); g2.addColorStop(1, '#8a6238'); }
+    c.fillStyle = g2; c.beginPath(); c.arc(x, y, rad, 0, TAU); c.fill();
+    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; c.stroke();
+    // growth rings (wood) or stitching (leather)
+    c.strokeStyle = leather ? 'rgba(240,220,190,.35)' : 'rgba(90,60,30,.35)';
+    if (leather) { c.setLineDash([2, 3]); c.beginPath(); c.arc(x, y, rad * 0.78, 0, TAU); c.stroke(); c.setLineDash([]); }
+    else for (let k = 1; k < 5; k++) { c.beginPath(); c.arc(x + 1, y - 1, rad * k / 5, 0, TAU); c.stroke(); }
+    // rattle: contact lost part of the time
+    if (snap && snap.down && snap.contact < 0.97) {
+      const a = Math.min(1, (0.97 - snap.contact) * 4);
+      c.strokeStyle = `rgba(255,210,140,${0.8 * a})`; c.lineWidth = 1.5;
+      for (let k = 0; k < 4; k++) { const ang = th + (Math.random() - 0.5) * 0.25, r1 = R + side * (tr + 2), r2 = r1 + side * (4 + 8 * Math.random());
+        c.beginPath(); c.moveTo(cx + r1 * Math.cos(ang), cy + r1 * Math.sin(ang)); c.lineTo(cx + r2 * Math.cos(ang), cy + r2 * Math.sin(ang)); c.stroke(); }
+    }
+  }
+
+  function drawRipples(c, wR, now) {
+    const t = now / 1000, lam = Math.max(2.2, 0.0016 * pxPerM);
+    let maxW = 0; for (let i = 0; i < NTH; i++) maxW = Math.max(maxW, envW[i]);
+    if (maxW < 2e-7) return;
+    const segs = 120;
+    for (let s = 0; s < segs; s++) {
+      const i0 = Math.floor(s * NTH / segs), a = envW[i0];
+      const strength = Math.min(1, a / 6e-6);
+      if (strength < 0.03) continue;
+      const th0 = TAU * s / segs, th1 = TAU * (s + 1) / segs;
+      for (let k = 0; k < 8; k++) {
+        const r = wR - 1.5 - k * lam * 0.9; if (r < 4) break;
+        const al = strength * Math.exp(-k / (1.5 + 3 * strength)) * (0.55 + 0.45 * Math.sin(TAU * (t * 9 - k * 0.5) + s * 0.7));
+        c.strokeStyle = `rgba(200,240,255,${0.42 * al})`; c.lineWidth = 1;
+        c.beginPath(); c.arc(cx, cy, r, th0, th1); c.stroke();
+      }
+      // spray: real singing glasses throw droplets from the antinodes when driven hard
+      if (a > 4e-5 && Math.random() < 0.04 * (a / 4e-5) && drops.length < 120) {
+        drops.push({ th: th0 + Math.random() * (th1 - th0), r: wR - 2, v: 20 + 50 * Math.random(), t: now, life: 300 + 400 * Math.random() });
+      }
+    }
+    for (let i = drops.length - 1; i >= 0; i--) {
+      const d = drops[i], age = (now - d.t) / d.life; if (age > 1) { drops.splice(i, 1); continue; }
+      const r = d.r - d.v * age * 0.6, h = Math.sin(Math.PI * age);
+      c.fillStyle = `rgba(220,245,255,${0.7 * (1 - age)})`;
+      c.beginPath(); c.arc(cx + r * Math.cos(d.th), cy + r * Math.sin(d.th), 0.8 + 1.8 * h, 0, TAU); c.fill();
+    }
+  }
+
+  // ------------------------------------------------------------ side view
+  const side = $('sideCv'), sctx = side.getContext('2d');
+  let sideMap = null, sideDrag = false;
+  function drawSide(an) {
+    const c = sctx, w = side.width / dpr, h = side.height / dpr; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+    if (!glass || !prof) return;
+    const g = glass.geo, stemL = BOWL ? 0.018 * S.scale : 0.075 * S.scale, footR = BOWL ? g.rMaxOuter * 0.55 : FOOT_R * S.scale;
+    const zTop = g.rim.z + 0.004, zBot = -stemL - 0.004, rW = Math.max(g.rMaxOuter, footR) * 1.15;
+    const sc = Math.min((h - 16) / (zTop - zBot), (w - 20) / (2 * rW)), ox = w / 2, oy = h - 8 + zBot * sc;
+    const X = (r) => ox + r * sc, Y = (z) => oy - z * sc;
+    sideMap = { Y, sc, oy, zf: g.zFloor, zr: g.zRimIn };
+    // stem + foot (glass) or ring cushion (bowl)
+    c.fillStyle = 'rgba(210,228,250,.10)'; c.strokeStyle = 'rgba(220,235,255,.35)'; c.lineWidth = 1;
+    const r0 = prof[0].r;
+    if (BOWL) {
+      c.fillStyle = '#5a2330'; c.strokeStyle = 'rgba(255,200,210,.25)';
+      c.beginPath(); c.ellipse(X(-footR * 0.62), Y(-stemL / 2), footR * 0.38 * sc, stemL / 2 * sc, 0, 0, TAU); c.fill(); c.stroke();
+      c.beginPath(); c.ellipse(X(footR * 0.62), Y(-stemL / 2), footR * 0.38 * sc, stemL / 2 * sc, 0, 0, TAU); c.fill(); c.stroke();
+    } else {
+    c.beginPath(); c.moveTo(X(-r0), Y(0)); c.quadraticCurveTo(X(-r0 * 0.55), Y(-stemL * 0.5), X(-r0 * 0.7), Y(-stemL + 0.004));
+    c.quadraticCurveTo(X(-footR * 0.4), Y(-stemL + 0.001), X(-footR), Y(-stemL)); c.lineTo(X(footR), Y(-stemL));
+    c.quadraticCurveTo(X(footR * 0.4), Y(-stemL + 0.001), X(r0 * 0.7), Y(-stemL + 0.004));
+    c.quadraticCurveTo(X(r0 * 0.55), Y(-stemL * 0.5), X(r0), Y(0)); c.closePath(); c.fill(); c.stroke();
+    }
+    // water
+    if (S.fill > 0.003 && wet) {
+      const I = g.inner; c.beginPath(); let started = false;
+      const pts = [];
+      for (let i = 0; i < I.z.length; i += 4) { if (I.z[i] > wet.h) break; pts.push([I.r[i], I.z[i]]); }
+      const top = g.innerAtZ(wet.h); pts.push([top.r, wet.h]);
+      c.moveTo(X(-pts[0][0]), Y(pts[0][1]));
+      for (const p of pts) c.lineTo(X(-p[0]), Y(p[1]));
+      for (let i = pts.length - 1; i >= 0; i--) c.lineTo(X(pts[i][0]), Y(pts[i][1]));
+      c.closePath();
+      const wg = c.createLinearGradient(0, Y(wet.h), 0, Y(g.zFloor)); wg.addColorStop(0, 'rgba(80,175,230,.55)'); wg.addColorStop(1, 'rgba(30,100,160,.45)');
+      c.fillStyle = wg; c.fill();
+      c.strokeStyle = 'rgba(170,225,255,.9)'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(X(-top.r), Y(wet.h)); c.lineTo(X(top.r), Y(wet.h)); c.stroke();
+    }
+    // bowl wall, displaced by the dominant mode shape (strobed)
+    let shape = null, n = 2, ampPx = 0;
+    if (an.dom && an.dom.shape) {
+      shape = an.dom.shape; n = an.dom.n;
+      const rimW = shape[shape.length - 1] || 1;
+      ampPx = 10 * Math.tanh(an.rimMax * EXAG * sc / 10) / Math.abs(rimW);
+    }
+    const wall = (sign) => {
+      const outer = [], inner = [];
+      if (BOWL) { const p = prof[0]; outer.push([0, p.z - p.t / 2]); inner.push([0, p.z + p.t / 2]); }   // close the bowl across the axis
+      const sgn = sign > 0 ? 1 : (n % 2 ? -1 : 1);
+      for (let i = 0; i < prof.length; i++) {
+        const p = prof[i], u = i / (prof.length - 1);
+        let d = 0; if (shape) { const j = u * (shape.length - 1), j0 = Math.floor(j), f = j - j0; d = (shape[j0] * (1 - f) + (shape[Math.min(shape.length - 1, j0 + 1)] || 0) * f) * ampPx * Math.cos(strobe) * sgn / sc; }
+        const nr = p.sn, nz = -p.c;
+        outer.push([sign * (p.r + (p.t / 2 + d) * nr), p.z + (p.t / 2 + d) * nz]);
+        inner.push([sign * (p.r + (-p.t / 2 + d) * nr), p.z + (-p.t / 2 + d) * nz]);
+      }
+      c.beginPath(); c.moveTo(X(outer[0][0]), Y(outer[0][1]));
+      for (const q of outer) c.lineTo(X(q[0]), Y(q[1]));
+      for (let i = inner.length - 1; i >= 0; i--) c.lineTo(X(inner[i][0]), Y(inner[i][1]));
+      c.closePath(); c.fillStyle = BOWL ? '#b48443' : 'rgba(225,238,255,.55)'; c.fill();
+      c.strokeStyle = BOWL ? '#f0cf8a' : 'rgba(240,248,255,.9)'; c.lineWidth = 0.8; c.stroke();
+    };
+    wall(1); wall(-1);
+    // dimension labels
+    c.fillStyle = 'rgba(135,148,166,.8)'; c.font = '10.5px "IBM Plex Mono", monospace'; c.textAlign = 'left';
+    c.fillText(`Ø rim ${(2 * g.rimR * 1e3).toFixed(0)} mm`, 6, 14);
+    c.fillText(`bowl ${(g.rim.z * 1e3).toFixed(0)} mm`, 6, 28);
+    c.fillText(`${glass.mat.name.split(' (')[0]}`, 6, 42);
+    if (wet) { c.textAlign = 'right'; c.fillText(`${Math.round(wet.volume * 1e6)} mL`, w - 6, 14); }
+  }
+  function sideFill(e) {
+    if (!sideMap) return; const r = side.getBoundingClientRect(), y = e.clientY - r.top;
+    const z = (sideMap.oy - y) / sideMap.sc; setFill((z - sideMap.zf) / (sideMap.zr - sideMap.zf));
+  }
+  side.addEventListener('pointerdown', e => { sideDrag = true; side.setPointerCapture(e.pointerId); sideFill(e); });
+  side.addEventListener('pointermove', e => { if (sideDrag) sideFill(e); });
+  side.addEventListener('pointerup', () => { sideDrag = false; }); side.addEventListener('pointercancel', () => { sideDrag = false; });
+
+  // ------------------------------------------------------------ curve
+  function drawCurve() {
+    const cv = $('curveCv'), c = cv.getContext('2d'), w = cv.width / dpr, h = cv.height / dpr;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
+    if (!curve) { c.fillStyle = '#4d5a6b'; c.font = '12px Inter'; c.fillText('computing…', 10, 20); return; }
+    const pts = curve.filter(p => isFinite(p.hz)), fmin = Math.min(...pts.map(p => p.hz)), fmax = Math.max(...pts.map(p => p.hz));
+    const pad = { l: 44, r: 10, t: 8, b: 20 }, X = f => pad.l + f / 0.95 * (w - pad.l - pad.r), Y = hz => pad.t + (1 - (hz - fmin * 0.97) / (fmax * 1.01 - fmin * 0.97)) * (h - pad.t - pad.b);
+    c.strokeStyle = '#1d2531'; c.lineWidth = 1; c.fillStyle = '#4d5a6b'; c.font = '10px "IBM Plex Mono", monospace';
+    for (const f of [0, 0.25, 0.5, 0.75, 0.95]) { c.beginPath(); c.moveTo(X(f), pad.t); c.lineTo(X(f), h - pad.b); c.stroke(); c.textAlign = 'center'; c.fillText(Math.round(f * 100) + '%', X(f), h - 6); }
+    c.textAlign = 'right'; for (const hz of [fmin, (fmin + fmax) / 2, fmax]) c.fillText(Math.round(hz), pad.l - 6, Y(hz) + 3);
+    c.strokeStyle = '#3aa6d8'; c.lineWidth = 2; c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(X(p.f), Y(p.hz)) : c.moveTo(X(p.f), Y(p.hz))); c.stroke();
+    if (wet) { const m = wet.modes.find(x => x.n === 2 && x.m === 0); if (m) { c.fillStyle = '#e8edf3'; c.beginPath(); c.arc(X(Math.min(0.95, S.fill)), Y(m.f), 4, 0, TAU); c.fill(); } }
+  }
+
+  // ------------------------------------------------------------ loop
+  let roT = 0, lastFill = -1;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - lastFrame) / 1000); lastFrame = now;
+    strobe += TAU * 0.8 * dt;
+    // velocity decays if the pointer stops producing events
+    if (P.down && now - P.lastT > 40 && Math.abs(P.omega) > 1e-3) { P.omega *= Math.exp(-dt / 0.05); send({ t: 'finger', f: { theta: P.theta, omega: P.omega } }); }
+    const an = analyse();
+    drawTop(an, now);
+    drawSide(an);
+    if (S.fill !== lastFill && curve) { lastFill = S.fill; drawCurve(); }
+    if (now - roT > 120 && wet) {
+      roT = now;
+      const m = an.dom && an.rimMax > 5e-7 ? an.dom : wet.modes.find(x => x.n === 2 && x.m === 0);
+      if (m) $('roPitch').textContent = `${m.f.toFixed(1)} Hz · ${noteName(m.f)}`;
+      $('roSpeed').textContent = snap && snap.down ? `${Math.abs(snap.vb * 100).toFixed(0)} cm/s` : '—';
+      $('roStick').textContent = snap && snap.down ? (BOWL ? `${Math.round(snap.stick * 100)}% · ${Math.round(snap.contact * 100)}%` : `${Math.round(snap.stick * 100)}%`) : '—';
+      const spl = snap ? 20 * Math.log10(Math.max(1e-7, snap.prms) / 2e-5) : 0;
+      $('roLevel').textContent = snap && spl > 12 ? `${spl.toFixed(0)} dB SPL` : '—';
+      document.querySelectorAll('#modeTable tbody tr').forEach(tr => tr.classList.toggle('hot', !!(an.dom && an.rimMax > 1e-6 && tr.dataset.key === an.dom.key)));
+    }
+    requestAnimationFrame(frame);
+  }
+
+  window.__glasshouse = { P, get rimPx() { return glass ? glass.geo.rimR * pxPerM : 0; }, get snap() { return snap; }, get audio() { return audio; }, get wet() { return wet; }, S };
+  $('xlabel').textContent = `rim motion ×${EXAG}`;
+  resize();
+  build();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

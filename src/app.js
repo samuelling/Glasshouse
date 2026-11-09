@@ -5,17 +5,21 @@
   const TAU = Math.PI * 2;
   const wrap = a => { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; };
   const ALPHA = 0.37;            // orientation of the glass's tiny asymmetry
-  const EXAG = 35;               // visual exaggeration of rim motion
+  const BOWL = (window.GH && window.GH.kind) === 'bowl';
+  const EXAG = BOWL ? 8 : 35;    // visual exaggeration of rim motion
   const OUT_PA = 0.8;            // pressure (Pa) that maps to digital full scale before volume
 
-  const S = { shape: 'bordeaux', material: 'leadCrystal', tRim: 1.2e-3, scale: 1, fill: 0, FN: 1.0, cond: 'wet', split: 3e-4, reverb: 0.25, vol: 0.8 };
+  const S = BOWL
+    ? { shape: 'thadobati', material: 'bellBronze', tScale: 1, scale: 1, fill: 0, FN: 4.0, stick: 'leather', side: 1, mallet: 'felt', split: 4e-3, reverb: 0.3, vol: 0.8 }
+    : { shape: 'bordeaux', material: 'leadCrystal', tRim: 1.2e-3, scale: 1, fill: 0, FN: 1.0, cond: 'wet', split: 3e-4, reverb: 0.25, vol: 0.8 };
+  const kindOK = v => (v.kind || 'glass') === (BOWL ? 'bowl' : 'glass') || v.kind === 'both';
   let glass = null, wet = null, modeByKey = new Map(), prof = null, curve = null, curveJob = 0;
   let audio = null, snap = null, started = false;
 
   // ------------------------------------------------------------ UI wiring
   const shapeSel = $('shape'), matSel = $('material');
-  for (const [k, v] of Object.entries(GP.SHAPES)) shapeSel.add(new Option(v.name, k));
-  for (const [k, v] of Object.entries(GP.MATERIALS)) matSel.add(new Option(v.name, k));
+  for (const [k, v] of Object.entries(GP.SHAPES)) if (kindOK(v)) shapeSel.add(new Option(v.name, k));
+  for (const [k, v] of Object.entries(GP.MATERIALS)) if (kindOK(v)) matSel.add(new Option(v.name, k));
   shapeSel.value = S.shape; matSel.value = S.material;
 
   function paintRange(el) { const p = (el.value - el.min) / (el.max - el.min) * 100; el.style.setProperty('--p', p + '%'); }
@@ -23,11 +27,11 @@
 
   let rebuildT = 0;
   const scheduleRebuild = () => { clearTimeout(rebuildT); rebuildT = setTimeout(build, 220); };
-  shapeSel.onchange = () => { S.shape = shapeSel.value; build(); };
+  shapeSel.onchange = () => { S.shape = shapeSel.value; const sm = GP.SHAPES[S.shape].mat; if (sm) { S.material = sm; matSel.value = sm; } else if (BOWL && S.material === 'fusedQuartz') { S.material = 'bellBronze'; matSel.value = 'bellBronze'; } build(); };
   matSel.onchange = () => { S.material = matSel.value; build(); };
-  $('thick').oninput = e => { S.tRim = +e.target.value * 1e-3; $('thickOut').textContent = (+e.target.value).toFixed(2) + ' mm'; scheduleRebuild(); };
+  $('thick').oninput = e => { if (BOWL) { S.tScale = +e.target.value; $('thickOut').textContent = '×' + S.tScale.toFixed(2); } else { S.tRim = +e.target.value * 1e-3; $('thickOut').textContent = (+e.target.value).toFixed(2) + ' mm'; } scheduleRebuild(); };
   $('size').oninput = e => { S.scale = +e.target.value / 100; $('sizeOut').textContent = e.target.value + '%'; scheduleRebuild(); };
-  $('press').oninput = e => { S.FN = +e.target.value; $('pressOut').textContent = S.FN.toFixed(2) + ' N'; send({ t: 'finger', f: { FN: S.FN } }); };
+  $('press').oninput = e => { S.FN = +e.target.value; $('pressOut').textContent = S.FN.toFixed(BOWL ? 1 : 2) + ' N'; send({ t: 'finger', f: { FN: S.FN } }); };
   $('split').oninput = e => { S.split = +e.target.value / 100; $('splitOut').textContent = (+e.target.value).toFixed(3) + '%'; sendModes(); };
   $('reverb').oninput = e => { S.reverb = +e.target.value / 100; $('reverbOut').textContent = e.target.value + '%'; applyMix(); };
   $('vol').oninput = e => { S.vol = +e.target.value / 100; $('volOut').textContent = e.target.value + '%'; applyMix(); };
@@ -38,10 +42,16 @@
     if (!fillRAF) fillRAF = requestAnimationFrame(() => { fillRAF = 0; if (glass) updateWet(); });
   }
   $('fill').oninput = e => setFill(+e.target.value / 100, true);
-  document.querySelectorAll('#cond button').forEach(b => b.onclick = () => {
-    document.querySelectorAll('#cond button').forEach(x => x.classList.toggle('on', x === b));
-    S.cond = b.dataset.v; send({ t: 'finger', f: { cond: S.cond } });
+  const seg = (id, fn) => document.querySelectorAll('#' + id + ' button').forEach(b => b.onclick = () => {
+    document.querySelectorAll('#' + id + ' button').forEach(x => x.classList.toggle('on', x === b)); fn(b.dataset.v);
   });
+  if (BOWL) {
+    seg('stick', v => { S.stick = v; sendExciter(); });
+    seg('sideSel', v => { S.side = +v; sendExciter(); });
+    seg('mallet', v => { S.mallet = v; });
+  } else seg('cond', v => { S.cond = v; send({ t: 'finger', f: { cond: S.cond } }); });
+  function sendExciter() { if (BOWL) send({ t: 'exciter', e: { kind: 'puja', stick: S.stick, side: S.side } }); }
+  const MALLET = { felt: { force: 45, dur: 2.5e-3 }, wood: { force: 70, dur: 4e-4 } };
 
   // ------------------------------------------------------------ physics
   function busy(on, msg) { $('busy').classList.toggle('on', on); if (msg) $('busyMsg').textContent = msg; }
@@ -49,7 +59,7 @@
     busy(true, 'Solving shell modes…');
     setTimeout(() => {
       const t0 = performance.now();
-      glass = GP.buildGlass({ shape: S.shape, material: S.material, tRim: S.tRim, scale: S.scale, Ne: 36, nKeep: 8 });
+      glass = GP.buildGlass(BOWL ? { shape: S.shape, material: S.material, scale: S.scale, tScale: S.tScale, Ne: 36, nKeep: 8 } : { shape: S.shape, material: S.material, tRim: S.tRim, scale: S.scale, Ne: 36, nKeep: 8 });
       prof = GP.profile(glass, 120);
       updateWet();
       busy(false);
@@ -58,7 +68,8 @@
     }, 30);
   }
   function updateWet() {
-    wet = GP.wetModes(glass, S.fill, { perN: 2, fmax: 12000, shapes: true });
+    wet = GP.wetModes(glass, S.fill, BOWL ? { perN: 2, fmax: 9000, shapes: true, contactDepth: 0.015 * S.scale } : { perN: 2, fmax: 12000, shapes: true });
+    wet.rc = glass.geo.at(wet.contactS).r;
     modeByKey = new Map(wet.modes.map(m => [m.key, m]));
     $('fillOut').textContent = `${Math.round(S.fill * 100)}% · ${Math.round(wet.volume * 1e6)} mL`;
     sendModes(); renderTable(); if (curve) drawCurve();
@@ -66,7 +77,7 @@
   function sendModes() {
     if (!wet) return;
     const modes = wet.modes.map(({ shape, ...m }) => m);
-    send({ t: 'modes', modes, opt: { split: S.split, alpha: ALPHA, Rrim: glass.geo.rimR } });
+    send({ t: 'modes', modes, opt: { split: S.split, alpha: ALPHA, Rrim: wet.rc || glass.geo.rimR } });
   }
   function computeCurve() {
     const job = ++curveJob, g = glass, pts = [], N = 24;
@@ -102,8 +113,8 @@
 class GlassProc extends AudioWorkletProcessor {
   constructor() { super(); this.v = new globalThis.GlassDSP.GlassVoice(sampleRate); this.n = 0;
     this.port.onmessage = e => { const m = e.data;
-      if (m.t === 'modes') this.v.setModes(m.modes, m.opt); else if (m.t === 'finger') this.v.setFinger(m.f);
-      else if (m.t === 'tap') this.v.tap(m.theta, m.force); else if (m.t === 'gain') this.v.gain = m.g; }; }
+      if (m.t === 'modes') this.v.setModes(m.modes, m.opt); else if (m.t === 'finger') this.v.setFinger(m.f); else if (m.t === 'exciter') this.v.setExciter(m.e);
+      else if (m.t === 'tap') this.v.tap(m.theta, m.force, m.dur); else if (m.t === 'gain') this.v.gain = m.g; }; }
   process(inp, out) { const o = out[0]; const L = o[0], R = o[1] || o[0]; this.v.process(L, R, L.length);
     if (++this.n % 5 === 0) this.port.postMessage(this.v.snapshot()); return true; }
 }
@@ -148,13 +159,14 @@ registerProcessor('glass-proc', GlassProc);`;
       const V = new window.GlassDSP.GlassVoice(ctx.sampleRate);
       node = ctx.createScriptProcessor(512, 0, 2);
       node.onaudioprocess = e => { V.process(e.outputBuffer.getChannelData(0), e.outputBuffer.getChannelData(1), e.outputBuffer.length); snap = V.snapshot(); };
-      audio.send = m => { if (m.t === 'modes') V.setModes(m.modes, m.opt); else if (m.t === 'finger') V.setFinger(m.f); else if (m.t === 'tap') V.tap(m.theta, m.force); else if (m.t === 'gain') V.gain = m.g; };
+      audio.send = m => { if (m.t === 'modes') V.setModes(m.modes, m.opt); else if (m.t === 'finger') V.setFinger(m.f); else if (m.t === 'exciter') V.setExciter(m.e); else if (m.t === 'tap') V.tap(m.theta, m.force, m.dur); else if (m.t === 'gain') V.gain = m.g; };
     }
     node.connect(dry); node.connect(conv);
     audio.node = node;
     applyMix();
     send({ t: 'gain', g: 1 / OUT_PA });
-    send({ t: 'finger', f: { FN: S.FN, cond: S.cond } });
+    if (BOWL) sendExciter(); else send({ t: 'finger', f: { FN: S.FN, cond: S.cond } });
+    send({ t: 'finger', f: { FN: S.FN } });
     sendModes();
     for (const m of queue) audio.send(m);
   }
@@ -181,7 +193,7 @@ registerProcessor('glass-proc', GlassProc);`;
   const FOOT_R = 0.039;
   function layout() {
     cx = W / 2; cy = H / 2;
-    const rMax = Math.max(glass.geo.rMaxOuter, FOOT_R * S.scale, glass.geo.rimR * 1.15);
+    const rMax = BOWL ? Math.max(glass.geo.rMaxOuter, glass.geo.rimR) * 1.18 : Math.max(glass.geo.rMaxOuter, FOOT_R * S.scale, glass.geo.rimR * 1.15);
     pxPerM = 0.44 * Math.min(W, H) / rMax;
   }
 
@@ -200,7 +212,8 @@ registerProcessor('glass-proc', GlassProc);`;
       send({ t: 'finger', f: { down: true, theta: p.th, omega: 0, FN: S.FN, cond: S.cond } });
     } else {
       // flick with a fingernail: force scales a little with how far out you tap
-      send({ t: 'tap', theta: p.th, force: 4 + 6 * Math.min(1, p.r / R) });
+      if (BOWL) { const M = MALLET[S.mallet]; send({ t: 'tap', theta: p.th, force: M.force * (0.5 + 0.5 * Math.min(1, p.r / R)), dur: M.dur }); }
+      else send({ t: 'tap', theta: p.th, force: 4 + 6 * Math.min(1, p.r / R) });
       flashes.push({ th: p.th, r: p.r, t: performance.now() });
     }
   }, { passive: false });
@@ -266,6 +279,8 @@ registerProcessor('glass-proc', GlassProc);`;
     const sh = c.createRadialGradient(cx + 10, cy + 16, R * 0.2, cx + 10, cy + 16, R * 1.5);
     sh.addColorStop(0, 'rgba(0,0,0,.45)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
     c.fillStyle = sh; c.beginPath(); c.arc(cx + 10, cy + 16, R * 1.5, 0, TAU); c.fill();
+    if (BOWL) drawBowlBody(c, g, R, tr);
+    else {
     // foot (seen through the bowl)
     const fR = FOOT_R * S.scale * pxPerM;
     c.strokeStyle = 'rgba(200,220,245,.10)'; c.lineWidth = 1.2; c.beginPath(); c.arc(cx, cy, fR, 0, TAU); c.stroke();
@@ -284,6 +299,7 @@ registerProcessor('glass-proc', GlassProc);`;
     c.fillStyle = ig; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
     // stem junction highlight
     { const sr = Math.max(2, g.inner.r[0] * pxPerM), sg = c.createRadialGradient(cx, cy, 0, cx, cy, sr * 1.6); sg.addColorStop(0, 'rgba(230,240,255,.16)'); sg.addColorStop(1, 'rgba(230,240,255,0)'); c.fillStyle = sg; c.beginPath(); c.arc(cx, cy, sr * 1.6, 0, TAU); c.fill(); }
+    }
     // water
     if (S.fill > 0.003 && wet) {
       const wR = g.innerAtZ(wet.h).r * pxPerM;
@@ -297,7 +313,7 @@ registerProcessor('glass-proc', GlassProc);`;
     // vibration envelope band
     const X = EXAG * pxPerM, lim = 0.16 * R;
     if (an.rimMax * X > 0.3) {
-      c.fillStyle = 'rgba(159,211,255,.13)';
+      c.fillStyle = BOWL ? 'rgba(255,214,140,.16)' : 'rgba(159,211,255,.13)';
       c.beginPath();
       for (let i = 0; i <= NTH; i++) { const k = i % NTH, th = TAU * k / NTH, d = Math.min(lim, envR[k] * X); const r = R + tr / 2 + d; i ? c.lineTo(cx + r * Math.cos(th), cy + r * Math.sin(th)) : c.moveTo(cx + r * Math.cos(th), cy + r * Math.sin(th)); }
       for (let i = NTH; i >= 0; i--) { const k = i % NTH, th = TAU * k / NTH, d = Math.min(lim, envR[k] * X); const r = R - tr / 2 - d; c.lineTo(cx + r * Math.cos(th), cy + r * Math.sin(th)); }
@@ -309,9 +325,16 @@ registerProcessor('glass-proc', GlassProc);`;
       for (let i = 0; i <= NTH; i++) { const k = i % NTH, th = TAU * k / NTH, d = lim * Math.tanh(dispR[k] * X / lim), r = R + off + d; i ? c.lineTo(cx + r * Math.cos(th), cy + r * Math.sin(th)) : c.moveTo(cx + r * Math.cos(th), cy + r * Math.sin(th)); }
     };
     c.lineJoin = 'round';
+    if (BOWL) {
+      rimPath(0); c.strokeStyle = 'rgba(70,45,20,.9)'; c.lineWidth = Math.max(4, tr * 1.25); c.stroke();
+      rimPath(0); const rg = c.createLinearGradient(cx - R, cy - R, cx + R, cy + R); rg.addColorStop(0, '#f6d58e'); rg.addColorStop(0.45, '#b98a43'); rg.addColorStop(0.7, '#e9c47a'); rg.addColorStop(1, '#8a6330');
+      c.strokeStyle = rg; c.lineWidth = Math.max(3, tr * 0.95); c.stroke();
+      rimPath(-tr * 0.25); c.strokeStyle = 'rgba(255,240,200,.45)'; c.lineWidth = 1; c.stroke();
+    } else {
     rimPath(0); c.strokeStyle = 'rgba(225,238,255,.20)'; c.lineWidth = Math.max(3, tr * 1.6); c.stroke();
     rimPath(0); c.strokeStyle = 'rgba(240,248,255,.85)'; c.lineWidth = Math.max(1.4, tr * 0.7); c.stroke();
     rimPath(-tr * 0.5); c.strokeStyle = 'rgba(255,255,255,.18)'; c.lineWidth = 1; c.stroke();
+    }
     // nodes of the dominant mode
     if (an.dom && an.rimMax * X > 1) {
       const dm = an.pairs.get(an.dom.key);
@@ -333,9 +356,10 @@ registerProcessor('glass-proc', GlassProc);`;
       const x = cx + R * Math.cos(f.th), y = cy + R * Math.sin(f.th);
       c.strokeStyle = `rgba(242,195,139,${0.7 * (1 - age)})`; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y, 6 + 30 * age, 0, TAU); c.stroke();
     }
-    // finger
+    // finger / puja
     const fd = snap && snap.down ? snap.theta : (P.down ? P.theta : null);
-    if (fd != null && P.down) {
+    if (BOWL && fd != null && P.down) drawPuja(c, fd, R, tr, X);
+    else if (fd != null && P.down) {
       const fx = cx + R * Math.cos(fd), fy = cy + R * Math.sin(fd), fr = Math.max(14, 0.0075 * pxPerM);
       const fg = c.createRadialGradient(fx - fr * 0.3, fy - fr * 0.3, fr * 0.1, fx, fy, fr);
       fg.addColorStop(0, 'rgba(246,214,190,.55)'); fg.addColorStop(1, 'rgba(220,170,140,.22)');
@@ -350,6 +374,64 @@ registerProcessor('glass-proc', GlassProc);`;
     // listener marker
     c.fillStyle = 'rgba(135,148,166,.5)'; c.font = '500 10px "IBM Plex Mono", monospace'; c.textAlign = 'center';
     c.fillText('▲ mics', cx, H - 10);
+  }
+
+  // hand-hammered bronze, seen from above
+  let hammer = null;
+  function drawBowlBody(c, g, R, tr) {
+    const bR = Math.max(R, g.rMaxOuter * pxPerM);
+    // outer flank (visible where the belly is wider than the rim)
+    if (bR > R + 1) {
+      const og = c.createRadialGradient(cx - bR * 0.3, cy - bR * 0.3, R * 0.6, cx, cy, bR);
+      og.addColorStop(0, '#5b3f1d'); og.addColorStop(0.75, '#7a5427'); og.addColorStop(1, '#3b2710');
+      c.fillStyle = og; c.beginPath(); c.arc(cx, cy, bR, 0, TAU); c.fill();
+    }
+    // interior: warm bronze with a darker patina toward the bottom
+    const ig = c.createRadialGradient(cx - R * 0.25, cy - R * 0.3, R * 0.05, cx, cy, R);
+    ig.addColorStop(0, '#6b4a22'); ig.addColorStop(0.35, '#7d5a2b'); ig.addColorStop(0.8, '#a57a3c'); ig.addColorStop(1, '#c9a05a');
+    c.fillStyle = ig; c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.fill();
+    // hammer marks (deterministic per bowl)
+    if (!hammer || hammer.key !== S.shape + S.scale) {
+      let sd = 7; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      hammer = { key: S.shape + S.scale, marks: Array.from({ length: 240 }, () => ({ r: Math.sqrt(rnd()) * 0.95, th: rnd() * TAU, s: 0.025 + 0.03 * rnd(), a: rnd() })) };
+    }
+    c.save(); c.beginPath(); c.arc(cx, cy, R, 0, TAU); c.clip();
+    for (const m of hammer.marks) {
+      const x = cx + m.r * R * Math.cos(m.th), y = cy + m.r * R * Math.sin(m.th), s = m.s * R;
+      const hg = c.createRadialGradient(x - s * 0.35, y - s * 0.35, 0, x, y, s);
+      hg.addColorStop(0, `rgba(255,225,160,${0.04 + 0.05 * m.a})`); hg.addColorStop(0.7, 'rgba(255,225,160,0)'); hg.addColorStop(1, `rgba(40,25,10,${0.05 + 0.05 * m.a})`);
+      c.fillStyle = hg; c.beginPath(); c.ellipse(x, y, s * 1.3, s * 0.7, m.th + 1.2, 0, TAU); c.fill();
+    }
+    // lathe rings near the rim and the floor
+    c.strokeStyle = 'rgba(255,230,170,.10)'; c.lineWidth = 1;
+    for (const f of [0.93, 0.89, 0.86, 0.32, 0.28]) { c.beginPath(); c.arc(cx, cy, R * f, 0, TAU); c.stroke(); }
+    // specular sweep
+    const sg = c.createLinearGradient(cx - R, cy - R, cx + R, cy + R); sg.addColorStop(0.2, 'rgba(255,240,200,0)'); sg.addColorStop(0.42, 'rgba(255,240,200,.12)'); sg.addColorStop(0.5, 'rgba(255,240,200,0)');
+    c.fillStyle = sg; c.fillRect(cx - R, cy - R, 2 * R, 2 * R);
+    c.restore();
+  }
+  // puja: wooden stick seen end-on, held against the outside (or inside) of the wall
+  function drawPuja(c, th, R, tr, X) {
+    const side = S.side, rad = Math.max(10, 0.013 * pxPerM);
+    const jitter = snap ? snap.y * X * side : 0;                  // stick's radial motion, same exaggeration as the rim
+    const rr = R + side * (tr * 0.5 + rad) + Math.max(-rad, Math.min(rad, jitter));
+    const x = cx + rr * Math.cos(th), y = cy + rr * Math.sin(th);
+    const leather = S.stick === 'leather';
+    const g2 = c.createRadialGradient(x - rad * 0.3, y - rad * 0.3, rad * 0.1, x, y, rad);
+    if (leather) { g2.addColorStop(0, '#a1785a'); g2.addColorStop(1, '#5d3e2a'); } else { g2.addColorStop(0, '#d9b98a'); g2.addColorStop(1, '#8a6238'); }
+    c.fillStyle = g2; c.beginPath(); c.arc(x, y, rad, 0, TAU); c.fill();
+    c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 1; c.stroke();
+    // growth rings (wood) or stitching (leather)
+    c.strokeStyle = leather ? 'rgba(240,220,190,.35)' : 'rgba(90,60,30,.35)';
+    if (leather) { c.setLineDash([2, 3]); c.beginPath(); c.arc(x, y, rad * 0.78, 0, TAU); c.stroke(); c.setLineDash([]); }
+    else for (let k = 1; k < 5; k++) { c.beginPath(); c.arc(x + 1, y - 1, rad * k / 5, 0, TAU); c.stroke(); }
+    // rattle: contact lost part of the time
+    if (snap && snap.down && snap.contact < 0.97) {
+      const a = Math.min(1, (0.97 - snap.contact) * 4);
+      c.strokeStyle = `rgba(255,210,140,${0.8 * a})`; c.lineWidth = 1.5;
+      for (let k = 0; k < 4; k++) { const ang = th + (Math.random() - 0.5) * 0.25, r1 = R + side * (tr + 2), r2 = r1 + side * (4 + 8 * Math.random());
+        c.beginPath(); c.moveTo(cx + r1 * Math.cos(ang), cy + r1 * Math.sin(ang)); c.lineTo(cx + r2 * Math.cos(ang), cy + r2 * Math.sin(ang)); c.stroke(); }
+    }
   }
 
   function drawRipples(c, wR, now) {
@@ -387,18 +469,24 @@ registerProcessor('glass-proc', GlassProc);`;
   function drawSide(an) {
     const c = sctx, w = side.width / dpr, h = side.height / dpr; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, w, h);
     if (!glass || !prof) return;
-    const g = glass.geo, stemL = 0.075 * S.scale, footR = FOOT_R * S.scale;
+    const g = glass.geo, stemL = BOWL ? 0.018 * S.scale : 0.075 * S.scale, footR = BOWL ? g.rMaxOuter * 0.55 : FOOT_R * S.scale;
     const zTop = g.rim.z + 0.004, zBot = -stemL - 0.004, rW = Math.max(g.rMaxOuter, footR) * 1.15;
     const sc = Math.min((h - 16) / (zTop - zBot), (w - 20) / (2 * rW)), ox = w / 2, oy = h - 8 + zBot * sc;
     const X = (r) => ox + r * sc, Y = (z) => oy - z * sc;
     sideMap = { Y, sc, oy, zf: g.zFloor, zr: g.zRimIn };
-    // stem + foot
+    // stem + foot (glass) or ring cushion (bowl)
     c.fillStyle = 'rgba(210,228,250,.10)'; c.strokeStyle = 'rgba(220,235,255,.35)'; c.lineWidth = 1;
     const r0 = prof[0].r;
+    if (BOWL) {
+      c.fillStyle = '#5a2330'; c.strokeStyle = 'rgba(255,200,210,.25)';
+      c.beginPath(); c.ellipse(X(-footR * 0.62), Y(-stemL / 2), footR * 0.38 * sc, stemL / 2 * sc, 0, 0, TAU); c.fill(); c.stroke();
+      c.beginPath(); c.ellipse(X(footR * 0.62), Y(-stemL / 2), footR * 0.38 * sc, stemL / 2 * sc, 0, 0, TAU); c.fill(); c.stroke();
+    } else {
     c.beginPath(); c.moveTo(X(-r0), Y(0)); c.quadraticCurveTo(X(-r0 * 0.55), Y(-stemL * 0.5), X(-r0 * 0.7), Y(-stemL + 0.004));
     c.quadraticCurveTo(X(-footR * 0.4), Y(-stemL + 0.001), X(-footR), Y(-stemL)); c.lineTo(X(footR), Y(-stemL));
     c.quadraticCurveTo(X(footR * 0.4), Y(-stemL + 0.001), X(r0 * 0.7), Y(-stemL + 0.004));
     c.quadraticCurveTo(X(r0 * 0.55), Y(-stemL * 0.5), X(r0), Y(0)); c.closePath(); c.fill(); c.stroke();
+    }
     // water
     if (S.fill > 0.003 && wet) {
       const I = g.inner; c.beginPath(); let started = false;
@@ -422,6 +510,7 @@ registerProcessor('glass-proc', GlassProc);`;
     }
     const wall = (sign) => {
       const outer = [], inner = [];
+      if (BOWL) { const p = prof[0]; outer.push([0, p.z - p.t / 2]); inner.push([0, p.z + p.t / 2]); }   // close the bowl across the axis
       const sgn = sign > 0 ? 1 : (n % 2 ? -1 : 1);
       for (let i = 0; i < prof.length; i++) {
         const p = prof[i], u = i / (prof.length - 1);
@@ -433,8 +522,8 @@ registerProcessor('glass-proc', GlassProc);`;
       c.beginPath(); c.moveTo(X(outer[0][0]), Y(outer[0][1]));
       for (const q of outer) c.lineTo(X(q[0]), Y(q[1]));
       for (let i = inner.length - 1; i >= 0; i--) c.lineTo(X(inner[i][0]), Y(inner[i][1]));
-      c.closePath(); c.fillStyle = 'rgba(225,238,255,.55)'; c.fill();
-      c.strokeStyle = 'rgba(240,248,255,.9)'; c.lineWidth = 0.8; c.stroke();
+      c.closePath(); c.fillStyle = BOWL ? '#b48443' : 'rgba(225,238,255,.55)'; c.fill();
+      c.strokeStyle = BOWL ? '#f0cf8a' : 'rgba(240,248,255,.9)'; c.lineWidth = 0.8; c.stroke();
     };
     wall(1); wall(-1);
     // dimension labels
@@ -482,7 +571,7 @@ registerProcessor('glass-proc', GlassProc);`;
       const m = an.dom && an.rimMax > 5e-7 ? an.dom : wet.modes.find(x => x.n === 2 && x.m === 0);
       if (m) $('roPitch').textContent = `${m.f.toFixed(1)} Hz · ${noteName(m.f)}`;
       $('roSpeed').textContent = snap && snap.down ? `${Math.abs(snap.vb * 100).toFixed(0)} cm/s` : '—';
-      $('roStick').textContent = snap && snap.down ? `${Math.round(snap.stick * 100)}%` : '—';
+      $('roStick').textContent = snap && snap.down ? (BOWL ? `${Math.round(snap.stick * 100)}% · ${Math.round(snap.contact * 100)}%` : `${Math.round(snap.stick * 100)}%`) : '—';
       const spl = snap ? 20 * Math.log10(Math.max(1e-7, snap.prms) / 2e-5) : 0;
       $('roLevel').textContent = snap && spl > 12 ? `${spl.toFixed(0)} dB SPL` : '—';
       document.querySelectorAll('#modeTable tbody tr').forEach(tr => tr.classList.toggle('hot', !!(an.dom && an.rimMax > 1e-6 && tr.dataset.key === an.dom.key)));

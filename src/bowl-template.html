@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GlassHouse · Singing bowl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>/*CSS*/</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="toprow"><h1>Glass<span>House</span></h1><nav class="tabs"><a href="index.html">Glass</a><a href="bowl.html" class="on">Bowl</a><a href="harp.html">Harp</a></nav></div>
+    <p class="sub">A physically modeled Himalayan singing bowl. Circle the outside of the rim with the puja; tap inside to strike it.</p>
+  </header>
+
+  <section class="stage">
+    <div class="topwrap">
+      <canvas id="top" aria-label="Bowl seen from above. Drag around the rim to rub with the puja; tap inside to strike."></canvas>
+      <div id="busy" class="busy"><div class="spin"></div><span id="busyMsg">Solving shell modes…</span></div>
+      <div id="hint" class="hint">
+        <div class="hint-in">
+          <b>Tap to wake the bowl</b>
+          <span>Then drag slowly and steadily around the rim (about half a lap per second) and let it build. Tap inside to strike it with the mallet.</span>
+          <small>On iPhone, turn off silent mode to hear Web Audio.</small>
+        </div>
+      </div>
+      <div class="xlabel" id="xlabel">rim motion ×8</div>
+    </div>
+    <div class="readout">
+      <div><label>Pitch</label><b id="roPitch">—</b></div>
+      <div><label>Puja speed</label><b id="roSpeed">—</b></div>
+      <div><label>Stick · contact</label><b id="roStick">—</b></div>
+      <div><label>Level @50 cm</label><b id="roLevel">—</b></div>
+    </div>
+  </section>
+
+  <section class="card controls">
+    <div class="row">
+      <label for="fill">Water <em id="fillOut">0%</em></label>
+      <input id="fill" type="range" min="0" max="95" step="0.5" value="0">
+    </div>
+    <div class="row">
+      <label for="press">Puja pressure <em id="pressOut">4.0 N</em></label>
+      <input id="press" type="range" min="1" max="12" step="0.1" value="4">
+    </div>
+    <div class="row">
+      <label>Puja</label>
+      <div class="seg" id="stick"><button data-v="leather" class="on">Leather-wrapped</button><button data-v="wood">Bare wood</button></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label>Rub</label><div class="seg" id="sideSel"><button data-v="1" class="on">Outside</button><button data-v="-1">Inside</button></div></div>
+      <div class="row"><label>Mallet</label><div class="seg" id="mallet"><button data-v="felt" class="on">Felt</button><button data-v="wood">Wood</button></div></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label for="shape">Bowl</label><select id="shape"></select></div>
+      <div class="row"><label for="material">Material</label><select id="material"></select></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label for="thick">Wall thickness <em id="thickOut">×1.00</em></label><input id="thick" type="range" min="0.6" max="1.6" step="0.02" value="1"></div>
+      <div class="row"><label for="size">Size <em id="sizeOut">100%</em></label><input id="size" type="range" min="70" max="135" step="1" value="100"></div>
+    </div>
+    <div class="grid2">
+      <div class="row"><label for="split">Hammering asymmetry <em id="splitOut">0.400%</em></label><input id="split" type="range" min="0" max="1.5" step="0.01" value="0.4"></div>
+      <div class="row"><label for="reverb">Room <em id="reverbOut">30%</em></label><input id="reverb" type="range" min="0" max="100" step="1" value="30"></div>
+    </div>
+    <div class="row">
+      <label for="vol">Volume <em id="volOut">80%</em></label>
+      <input id="vol" type="range" min="0" max="100" step="1" value="80">
+    </div>
+  </section>
+
+  <section class="card side">
+    <div class="side-head"><h2>Cross-section</h2><span class="note">drag the waterline</span></div>
+    <canvas id="sideCv" aria-label="Glass cross-section, drag to set water level"></canvas>
+    <div class="side-head"><h2>Pitch vs. fill</h2><span class="note" id="curveNote">(2,0) mode</span></div>
+    <canvas id="curveCv"></canvas>
+  </section>
+
+  <section class="card modes">
+    <div class="side-head"><h2>Modes</h2><span class="note">wet frequency · Q · where the energy goes</span></div>
+    <table id="modeTable"><thead><tr><th>(n,m)</th><th>f wet</th><th>f dry</th><th>Q</th><th>losses</th></tr></thead><tbody></tbody></table>
+    <div class="legend"><i class="l-mat"></i>material <i class="l-rad"></i>sound radiation <i class="l-vis"></i>water boundary layer <i class="l-sup"></i>stem/support</div>
+  </section>
+
+  <details class="card how">
+    <summary>How it's modeled</summary>
+    <div class="how-body">
+      <p><b>Bowl.</b> This is the same thin-shell finite-element solve as the glass, applied to a hand-hammered bowl. The meridian runs all the way to the axis, where the shell closes. The wall thickens into a rolled lip at the rim and toward the hammered base, and the bowl sits free on a cushion instead of being clamped to a stem. The partials come out inharmonic, as in real bowls: roughly 1 : 2.7 : 4.9 : 7.5 for the Thadobati. A 1.25 kg, Ø18 cm bell-bronze bowl sings near 290 Hz. "Antique Himalayan alloy" uses the effective modulus Terwagne &amp; Bush measured on real bowls (≈77 GPa at ≈8.9 g/cm³).</p>
+      <p><b>Puja.</b> The stick presses on the outside wall about 1.5 cm below the rim. Contact is unilateral: a stiff spring-dashpot that can only push. The stick has mass, and your hand pushes it with the set force. Friction between stick and bronze weakens with sliding speed and is solved implicitly every 10 µs, using the normal force the contact produces at that instant. A leather wrap is soft and lossy, so it stays in contact. Bare wood is stiff, so once the wall's motion exceeds the stick's tiny static indentation, the stick bounces off every cycle. That is the rattle you get when you rub a loud bowl with a wooden stick.</p>
+      <p><b>Outside vs. inside.</b> Real bowls only sing when rubbed on the outside (Debut &amp; Antunes). The model shows the same thing without being told: rubbed from inside, the radial–tangential coupling of the shell mode removes energy instead of feeding it, so the bowl only scrapes.</p>
+      <p><b>Water and sound.</b> Water uses the same potential-flow added mass as the glass, inside the bowl's true shape. A bowl's walls move most near the rim, so water lowers its pitch much less than it lowers a glass's. At a few hundred hertz and tens of microns of wall motion, the waterline sees several g, which is enough for Faraday ripples and spray. Each mode pair is split by the hammering asymmetry, so the rotating quadrupole beats ("wah-wah") at a fixed listener.</p>
+    </div>
+  </details>
+  <footer>GlassHouse · material constants go in; frequencies, mode shapes, losses and the singing itself come out.</footer>
+</main>
+<script type="text/plain" id="dsp-src">/*DSP*/</script>
+<script>/*PHYSICS*/</script>
+<script>window.GH = { kind: 'bowl' };</script>
+<script>/*APP*/</script>
+</body>
+</html>

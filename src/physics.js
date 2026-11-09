@@ -187,7 +187,7 @@
 
   // --------------------------------------------------------------- geometry
   // Midsurface meridian = cubic Bezier in (r, z) [mm], P0 at stem junction.
-  function makeGeometry(P, scale, tRim, tBase) {
+  function makeGeometry(P, scale, tRim, tBase, thickFn) {
     const S = scale * 1e-3;
     const p = P.map(q => [q[0] * S, q[1] * S]);
     function bz(t) {
@@ -213,7 +213,7 @@
       let t = Ts[lo] + (s - Ss[lo]) / (Ss[hi] - Ss[lo]) * (Ts[hi] - Ts[lo]);
       const b = bz(t); t += 0; return t;
     }
-    function thick(s) { const x = 1 - s / L; return tRim + (tBase - tRim) * x * x; }
+    function thick(s) { if (thickFn) return thickFn(s, L); const x = 1 - s / L; return tRim + (tBase - tRim) * x * x; }
     function at(s) {
       const b = bz(tOfS(s));
       const sig = Math.hypot(b.rt, b.zt), c = b.rt / sig, sn = b.zt / sig;
@@ -300,7 +300,7 @@
         }
       }
     }
-    const fixed = new Set(clamp ? [0, 2, 4, 5] : []);
+    const fixed = new Set(opts.bc === 'pole' ? [0, 2, 4] : clamp ? [0, 2, 4, 5] : []);   // pole: closed bowl bottom (u=v=w=0 on the axis for n>=2)
     const free = []; for (let i = 0; i < nd; i++) if (!fixed.has(i)) free.push(i);
     const Kr = mat(free.length, free.length), Mr = mat(free.length, free.length);
     for (let i = 0; i < free.length; i++) for (let j = 0; j < free.length; j++) { Kr[i][j] = K[free[i]][free[j]]; Mr[i][j] = M[free[i]][free[j]]; }
@@ -403,15 +403,26 @@
     leadCrystal: { name: 'Lead crystal (24–30% PbO)', E: 58e9, rho: 3050, nu: 0.23, eta: 2.5e-4 },
     sodaLime: { name: 'Soda-lime glass', E: 72e9, rho: 2500, nu: 0.22, eta: 1.0e-3 },
     borosilicate: { name: 'Borosilicate', E: 64e9, rho: 2230, nu: 0.20, eta: 5.0e-4 },
-    fusedQuartz: { name: 'Fused quartz', E: 72.5e9, rho: 2200, nu: 0.17, eta: 4.0e-6 },
+    fusedQuartz: { name: 'Fused quartz', E: 72.5e9, rho: 2200, nu: 0.17, eta: 4.0e-6, kind: 'both' },
+    bellBronze: { name: 'Bell bronze (≈78% Cu / 22% Sn)', E: 1.05e11, rho: 8700, nu: 0.34, eta: 2.0e-4, kind: 'bowl' },
+    himalayan: { name: 'Antique Himalayan alloy (measured E≈77 GPa)', E: 7.7e10, rho: 8890, nu: 0.34, eta: 3.0e-4, kind: 'bowl' },
+    brass: { name: 'Brass (machine-made)', E: 1.0e11, rho: 8500, nu: 0.34, eta: 8.0e-4, kind: 'bowl' },
   };
+  for (const k of ['leadCrystal', 'sodaLime', 'borosilicate']) MATERIALS[k].kind = 'glass';
   const SHAPES = {
     bordeaux: { name: 'Bordeaux', P: [[4.5, 0], [42, 0], [52, 62], [36, 102]] },
     burgundy: { name: 'Burgundy balloon', P: [[4.5, 0], [58, 0], [64, 70], [40, 100]] },
     tulip: { name: 'Tulip (flared rim)', P: [[4.5, 0], [40, 0], [26, 70], [38, 108]] },
     snifter: { name: 'Brandy snifter', P: [[4.5, 0], [62, 0], [70, 78], [31, 102]] },
     flute: { name: 'Champagne flute', P: [[3.5, 0], [18, 0], [27, 85], [25, 165]] },
+    // singing bowls: closed bottom (pole), free on a cushion, thickened rim lip; thickness in mm scales with size
+    thadobati: { name: 'Thadobati (straight wall, Ø18 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [70, 0], [92, 20], [88, 75]], t: { wall: 2.6, base: 3.5, lip: 4.5, lipLen: 6 } },
+    jambati: { name: 'Jambati (large, heavy, Ø27 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [95, 0], [150, 45], [135, 110]], t: { wall: 3.2, base: 4.5, lip: 5.5, lipLen: 8 } },
+    manipuri: { name: 'Manipuri (wide & shallow, Ø22 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [80, 0], [115, 15], [108, 55]], t: { wall: 2.2, base: 3.2, lip: 3.6, lipLen: 5 } },
+    hand: { name: 'Small hand bowl (Ø12 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [40, 0], [64, 25], [60, 55]], t: { wall: 2.0, base: 3.0, lip: 3.0, lipLen: 4 } },
+    crystal: { name: 'Frosted quartz crystal bowl (Ø25 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [100, 0], [126, 8], [125, 180]], t: { wall: 6.0, base: 7.0, lip: 6.0, lipLen: 4 }, mat: 'fusedQuartz' },
   };
+  for (const k of ['bordeaux', 'burgundy', 'tulip', 'snifter', 'flute']) SHAPES[k].kind = 'glass';
   const AIR = { rho: 1.204, c: 343.2 };
   const WATER = { rho: 998, nu: 1.0e-6 };
 
@@ -420,9 +431,14 @@
   function buildGlass(cfg) {
     const shape = SHAPES[cfg.shape] || SHAPES.bordeaux, m = MATERIALS[cfg.material] || MATERIALS.leadCrystal;
     const tRim = cfg.tRim || 1.2e-3, tBase = tRim * (cfg.baseRatio || 2.4);
-    const geo = makeGeometry(shape.P, cfg.scale || 1, tRim, tBase);
+    let thickFn = null;
+    if (shape.t) {                                    // bowl: wall + thicker base + thickened lip, scaled with size
+      const T = shape.t, k = 1e-3 * (cfg.scale || 1) * (cfg.tScale || 1), lipLen = T.lipLen * 1e-3 * (cfg.scale || 1);
+      thickFn = (s, L) => k * (T.wall + (T.base - T.wall) * Math.pow(1 - s / L, 3) + (T.lip - T.wall) * Math.exp(-(L - s) / lipLen));
+    }
+    const geo = makeGeometry(shape.P, cfg.scale || 1, tRim, tBase, thickFn);
     const orders = cfg.orders || [2, 3, 4, 5, 6], byN = {};
-    for (const n of orders) byN[n] = shellModes(geo, m, n, { Ne: cfg.Ne || 36, nKeep: cfg.nKeep || 8 });
+    for (const n of orders) byN[n] = shellModes(geo, m, n, { Ne: cfg.Ne || 36, nKeep: cfg.nKeep || 8, bc: shape.bc });
     return { cfg, geo, mat: m, shape, byN, orders };
   }
 
@@ -450,7 +466,7 @@
         if (f > fmax) break;
         // fields of the wet mode at rim, waterline; radiation integral over outer surface
         const comb = s => { let U = 0, V = 0, W = 0; for (let i = 0; i < nm; i++) { modeAt(dry[i], s, fld); U += X[i] * fld.U; V += X[i] * fld.V; W += X[i] * fld.W; } return { U, V, W }; };
-        const rim = comb(geo.L), gR = geo.rim;
+        const sC = Math.max(0, geo.L - (opts.contactDepth || 0)), rim = comb(sC), gR = sC < geo.L ? geo.at(sC) : geo.rim;
         const rimR = rim.U * gR.c + rim.W * gR.sn, rimA = rim.U * gR.sn - rim.W * gR.c;
         const kAir = omega / AIR.c;
         let cRad = 0;
@@ -468,7 +484,7 @@
         let wl = 0; if (liq) { const F = comb(sH), g = geo.at(sH); wl = F.W * g.sn + F.U * g.c; }
         let shape = null;
         if (opts.shapes) { const NSH = 48; shape = new Float32Array(NSH + 1); for (let i = 0; i <= NSH; i++) { const F = comb(geo.L * i / NSH); shape[i] = F.W; } }
-        const zMat = m.eta / 2, zRad = cRad / (2 * omega), zVis = cVis / (2 * omega), zSup = 1.5e-5;
+        const zMat = m.eta / 2, zRad = cRad / (2 * omega), zVis = cVis / (2 * omega), zSup = glass.shape.bc === 'pole' ? 4e-5 : 1.5e-5;     // bowl on a cushion vs. glass on its foot
         const zeta = zMat + zRad + zVis + zSup;
         out.push({
           key: n + ':' + j, n, m: j, f, omega, fDry: dryOmega[j] / (2 * Math.PI),
@@ -479,7 +495,7 @@
         count++;
       }
     }
-    return { modes: out.sort((a, b) => a.f - b.f), h, volume: vol, sH, fill };
+    return { modes: out.sort((a, b) => a.f - b.f), h, volume: vol, sH, fill, contactS: Math.max(0, geo.L - (opts.contactDepth || 0)) };
   }
 
   // quick profile sampler for drawing (mm)

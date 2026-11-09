@@ -62,7 +62,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
   <header>
     <div class="brand"><h1>Glass<span>House</span></h1><span class="mode">harp</span></div>
     <nav>
-      <a href="index.html" class="solo">Solo glass</a>
+      <a href="index.html" class="solo">Glass</a><a href="bowl.html" class="solo">Bowl</a>
       <button id="settingsBtn" class="ghost">Settings</button>
     </nav>
   </header>
@@ -144,6 +144,17 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
     wet:  { mu0: 0.60, d: 0.15, eps: 0.05, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
     dry:  { mu0: 0.85, d: 0.03,  eps: 0.001, beta: 0.6, Dc: 2e-6, vAge: 0.002 },
     oily: { mu0: 0.22, d: 0.004, eps: 0.003, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+    // puja sticks on bronze (rubbing the outside wall just below the rim)
+    leather: { mu0: 0.55, d: 0.12, eps: 0.04, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+    wood:    { mu0: 0.38, d: 0.07, eps: 0.04, beta: 0.0, Dc: 2e-6, vAge: 0.002 },
+  };
+
+  // puja contact mechanics: unilateral radial contact (penalty spring-dashpot), stick mass held by the hand,
+  // tangential compliance of hand+stick. Leather is soft and lossy; bare wood is stiff, so it can lose
+  // contact on every cycle once the rim amplitude exceeds the static indentation -> the rattle.
+  const PUJA = {
+    leather: { kc: 4e4, cc: 12, ms: 0.03, ch: 3, mp: 0.004, kp: 6000, cp: 4 },
+    wood:    { kc: 4e5, cc: 6,  ms: 0.03, ch: 3, mp: 0.004, kp: 6000, cp: 4 },
   };
 
   // steady-state friction: logarithmic velocity weakening (rate-and-state form) + viscous term
@@ -162,6 +173,8 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
       this.cc0 = 3.0; this.rough = 0.01; this.ridge = 4.5e-4; this.ridgePh = 0; this.nz = 0;
       // taps
       this.tapT = -1; this.tapDur = 4e-4; this.tapF = 0; this.tapTh = 0;
+      // exciter: 'finger' (on the rim top, constant normal force) or 'puja' (radial unilateral contact)
+      this.exc = 'finger'; this.side = 1; this.pj = PUJA.leather; this.y = 0; this.yd = 0; this.Fc = 0; this.contactCount = 0; this.FcAcc = 0;
       // mics: viewer is at the bottom of the screen (theta = +pi/2), mics +-25 deg
       this.mic = [Math.PI / 2 + 0.44, Math.PI / 2 - 0.44];
       this.gain = 1 / 0.25;                            // 0.25 Pa -> full scale
@@ -213,7 +226,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
       if (f.FN != null) this.FN = f.FN;
       if (f.cond) this.fr = FINGER[f.cond] || FINGER.wet;
       if (f.down != null) {
-        if (f.down && !this.down) { this.mu = muSteady(this.fr, 0); this.theta = f.theta; this.thetaT = f.theta; this.omS = 0; this.xp = 0; this.vp = 0; }
+        if (f.down && !this.down) { this.mu = muSteady(this.fr, 0); this.seatPuja = true; this.theta = f.theta; this.thetaT = f.theta; this.omS = 0; this.xp = 0; this.vp = 0; }
         this.down = f.down;
       }
       if (f.theta != null) this.thetaT = f.theta;
@@ -226,7 +239,14 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
       if (e < 3e-6) { if (e > 0) { this.q.fill(0); this.v.fill(0); } return true; }
       return false;
     }
-    tap(theta, force) { this.tapT = 0; this.tapTh = theta; this.tapF = force || 6; }
+    tap(theta, force, dur) { this.tapT = 0; this.tapTh = theta; this.tapF = force || 6; this.tapDur = dur || 4e-4; }
+    setExciter(e) {
+      if (e.kind) this.exc = e.kind;
+      if (e.side) this.side = e.side;
+      if (e.stick && PUJA[e.stick]) { this.pj = PUJA[e.stick]; this.fr = FINGER[e.stick]; }
+      if (this.exc === 'puja') { this.mp = this.pj.mp; this.kp = this.pj.kp; this.cp = this.pj.cp; }
+      else { this.mp = 3e-5; this.kp = 1000; this.cp = 1.5; }
+    }
     damp() { this.q.fill(0); this.v.fill(0); }
 
     // shape factors for oscillator k at angle th
@@ -265,8 +285,25 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
             else { pT[k] = aT[k] * S; pR[k] = aR[k] * C; pA[k] = aA[k] * C; }
             vr += pR[k] * v[k]; va += pA[k] * v[k]; Y += pT[k] * pT[k];
           }
-          const cc = this.down ? this.cc0 * Math.sqrt(this.FN) : 0;
-          const Fr = -cc * vr, Fa = -cc * va;
+          let Fr, Fa, FNnow = this.FN;
+          if (this.exc === 'puja') {
+            let ur = 0; for (let k = 0; k < N; k++) ur += pR[k] * q[k];
+            const P = this.pj, sd = this.side;
+            let Fc = 0;
+            if (this.down) {
+              if (this.seatPuja) { this.y = ur - sd * this.FN / P.kc; this.yd = vr; this.seatPuja = false; }
+              const del = sd * (ur - this.y), deld = sd * (vr - this.yd);
+              if (del > 0) { Fc = P.kc * del + P.cc * deld; if (Fc < 0) Fc = 0; }
+              this.yd += dt * (sd * Fc - sd * this.FN - P.ch * this.yd) / P.ms; this.y += dt * this.yd;
+              if (Fc > 0) this.contactCount++;
+              this.FcAcc += Fc;
+            }
+            this.Fc = Fc; FNnow = Fc;
+            Fr = -sd * Fc; Fa = 0;
+          } else {
+            const cc = this.down ? this.cc0 * Math.sqrt(this.FN) : 0;
+            Fr = -cc * vr; Fa = -cc * va;
+          }
           let vg = 0;
           for (let k = 0; k < N; k++) {
             let Q = pR[k] * Fr + pA[k] * Fa;
@@ -276,7 +313,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
           }
           // ---- friction (implicit)
           let F = 0;
-          if (this.down && this.FN > 0) {
+          if (this.down && FNnow > 0) {
             const mp = this.mp;
             const vpS = (this.vp + dt * (-this.kp * this.xp + this.cp * this.vb) / mp) / (1 + this.cp * dt / mp);
             const vrel = vpS - vg, Z = dt * (1 / mp + Y);
@@ -284,7 +321,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
             this.ridgePh += Math.abs(this.vb) * dt / this.ridge;
             this.nz = 0.97 * this.nz + 0.03 * this.rand();
             const mod = 1 + this.rough * (0.6 * Math.sin(TAU * this.ridgePh) + 4 * this.nz);
-            const FN = this.FN, muNow = this.mu * mod;
+            const FN = FNnow, muNow = this.mu * mod;
             const Fs = vrel / Z;
             let vAfter;
             if (Math.abs(Fs) <= muNow * FN) { F = Fs; vAfter = 0; this.stickCount++; }
@@ -321,12 +358,13 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
       for (let k = 0; k < N; k++) { amps[2 * k] = this.q[k]; amps[2 * k + 1] = this.v[k] / this.om[k]; }
       const prms = Math.sqrt(this.pAcc / Math.max(1, this.pN));
       const stick = this.stepCount ? this.stickCount / this.stepCount : 0;
-      this.pAcc = 0; this.pN = 0; this.stickCount = 0; this.stepCount = 0;
-      return { keys: this.keys.slice(), amps, theta: this.theta, down: this.down, prms, stick, vb: this.vb, alpha: this.alpha };
+      const steps = this.pN * this.os, contact = this.down && steps ? this.contactCount / steps : 0, Fmean = steps ? this.FcAcc / steps : 0;
+      this.pAcc = 0; this.pN = 0; this.stickCount = 0; this.stepCount = 0; this.contactCount = 0; this.FcAcc = 0;
+      return { keys: this.keys.slice(), amps, theta: this.theta, down: this.down, prms, stick, vb: this.vb, alpha: this.alpha, contact, Fmean, y: this.y };
     }
   }
 
-  const api = { GlassVoice, FINGER };
+  const api = { GlassVoice, FINGER, PUJA };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.GlassDSP = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 </script>
@@ -519,7 +557,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
 
   // --------------------------------------------------------------- geometry
   // Midsurface meridian = cubic Bezier in (r, z) [mm], P0 at stem junction.
-  function makeGeometry(P, scale, tRim, tBase) {
+  function makeGeometry(P, scale, tRim, tBase, thickFn) {
     const S = scale * 1e-3;
     const p = P.map(q => [q[0] * S, q[1] * S]);
     function bz(t) {
@@ -545,7 +583,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
       let t = Ts[lo] + (s - Ss[lo]) / (Ss[hi] - Ss[lo]) * (Ts[hi] - Ts[lo]);
       const b = bz(t); t += 0; return t;
     }
-    function thick(s) { const x = 1 - s / L; return tRim + (tBase - tRim) * x * x; }
+    function thick(s) { if (thickFn) return thickFn(s, L); const x = 1 - s / L; return tRim + (tBase - tRim) * x * x; }
     function at(s) {
       const b = bz(tOfS(s));
       const sig = Math.hypot(b.rt, b.zt), c = b.rt / sig, sn = b.zt / sig;
@@ -632,7 +670,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
         }
       }
     }
-    const fixed = new Set(clamp ? [0, 2, 4, 5] : []);
+    const fixed = new Set(opts.bc === 'pole' ? [0, 2, 4] : clamp ? [0, 2, 4, 5] : []);   // pole: closed bowl bottom (u=v=w=0 on the axis for n>=2)
     const free = []; for (let i = 0; i < nd; i++) if (!fixed.has(i)) free.push(i);
     const Kr = mat(free.length, free.length), Mr = mat(free.length, free.length);
     for (let i = 0; i < free.length; i++) for (let j = 0; j < free.length; j++) { Kr[i][j] = K[free[i]][free[j]]; Mr[i][j] = M[free[i]][free[j]]; }
@@ -735,15 +773,26 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
     leadCrystal: { name: 'Lead crystal (24–30% PbO)', E: 58e9, rho: 3050, nu: 0.23, eta: 2.5e-4 },
     sodaLime: { name: 'Soda-lime glass', E: 72e9, rho: 2500, nu: 0.22, eta: 1.0e-3 },
     borosilicate: { name: 'Borosilicate', E: 64e9, rho: 2230, nu: 0.20, eta: 5.0e-4 },
-    fusedQuartz: { name: 'Fused quartz', E: 72.5e9, rho: 2200, nu: 0.17, eta: 4.0e-6 },
+    fusedQuartz: { name: 'Fused quartz', E: 72.5e9, rho: 2200, nu: 0.17, eta: 4.0e-6, kind: 'both' },
+    bellBronze: { name: 'Bell bronze (≈78% Cu / 22% Sn)', E: 1.05e11, rho: 8700, nu: 0.34, eta: 2.0e-4, kind: 'bowl' },
+    himalayan: { name: 'Antique Himalayan alloy (measured E≈77 GPa)', E: 7.7e10, rho: 8890, nu: 0.34, eta: 3.0e-4, kind: 'bowl' },
+    brass: { name: 'Brass (machine-made)', E: 1.0e11, rho: 8500, nu: 0.34, eta: 8.0e-4, kind: 'bowl' },
   };
+  for (const k of ['leadCrystal', 'sodaLime', 'borosilicate']) MATERIALS[k].kind = 'glass';
   const SHAPES = {
     bordeaux: { name: 'Bordeaux', P: [[4.5, 0], [42, 0], [52, 62], [36, 102]] },
     burgundy: { name: 'Burgundy balloon', P: [[4.5, 0], [58, 0], [64, 70], [40, 100]] },
     tulip: { name: 'Tulip (flared rim)', P: [[4.5, 0], [40, 0], [26, 70], [38, 108]] },
     snifter: { name: 'Brandy snifter', P: [[4.5, 0], [62, 0], [70, 78], [31, 102]] },
     flute: { name: 'Champagne flute', P: [[3.5, 0], [18, 0], [27, 85], [25, 165]] },
+    // singing bowls: closed bottom (pole), free on a cushion, thickened rim lip; thickness in mm scales with size
+    thadobati: { name: 'Thadobati (straight wall, Ø18 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [70, 0], [92, 20], [88, 75]], t: { wall: 2.6, base: 3.5, lip: 4.5, lipLen: 6 } },
+    jambati: { name: 'Jambati (large, heavy, Ø27 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [95, 0], [150, 45], [135, 110]], t: { wall: 3.2, base: 4.5, lip: 5.5, lipLen: 8 } },
+    manipuri: { name: 'Manipuri (wide & shallow, Ø22 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [80, 0], [115, 15], [108, 55]], t: { wall: 2.2, base: 3.2, lip: 3.6, lipLen: 5 } },
+    hand: { name: 'Small hand bowl (Ø12 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [40, 0], [64, 25], [60, 55]], t: { wall: 2.0, base: 3.0, lip: 3.0, lipLen: 4 } },
+    crystal: { name: 'Frosted quartz crystal bowl (Ø25 cm)', kind: 'bowl', bc: 'pole', P: [[2, 0], [100, 0], [126, 8], [125, 180]], t: { wall: 6.0, base: 7.0, lip: 6.0, lipLen: 4 }, mat: 'fusedQuartz' },
   };
+  for (const k of ['bordeaux', 'burgundy', 'tulip', 'snifter', 'flute']) SHAPES[k].kind = 'glass';
   const AIR = { rho: 1.204, c: 343.2 };
   const WATER = { rho: 998, nu: 1.0e-6 };
 
@@ -752,9 +801,14 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
   function buildGlass(cfg) {
     const shape = SHAPES[cfg.shape] || SHAPES.bordeaux, m = MATERIALS[cfg.material] || MATERIALS.leadCrystal;
     const tRim = cfg.tRim || 1.2e-3, tBase = tRim * (cfg.baseRatio || 2.4);
-    const geo = makeGeometry(shape.P, cfg.scale || 1, tRim, tBase);
+    let thickFn = null;
+    if (shape.t) {                                    // bowl: wall + thicker base + thickened lip, scaled with size
+      const T = shape.t, k = 1e-3 * (cfg.scale || 1) * (cfg.tScale || 1), lipLen = T.lipLen * 1e-3 * (cfg.scale || 1);
+      thickFn = (s, L) => k * (T.wall + (T.base - T.wall) * Math.pow(1 - s / L, 3) + (T.lip - T.wall) * Math.exp(-(L - s) / lipLen));
+    }
+    const geo = makeGeometry(shape.P, cfg.scale || 1, tRim, tBase, thickFn);
     const orders = cfg.orders || [2, 3, 4, 5, 6], byN = {};
-    for (const n of orders) byN[n] = shellModes(geo, m, n, { Ne: cfg.Ne || 36, nKeep: cfg.nKeep || 8 });
+    for (const n of orders) byN[n] = shellModes(geo, m, n, { Ne: cfg.Ne || 36, nKeep: cfg.nKeep || 8, bc: shape.bc });
     return { cfg, geo, mat: m, shape, byN, orders };
   }
 
@@ -782,7 +836,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
         if (f > fmax) break;
         // fields of the wet mode at rim, waterline; radiation integral over outer surface
         const comb = s => { let U = 0, V = 0, W = 0; for (let i = 0; i < nm; i++) { modeAt(dry[i], s, fld); U += X[i] * fld.U; V += X[i] * fld.V; W += X[i] * fld.W; } return { U, V, W }; };
-        const rim = comb(geo.L), gR = geo.rim;
+        const sC = Math.max(0, geo.L - (opts.contactDepth || 0)), rim = comb(sC), gR = sC < geo.L ? geo.at(sC) : geo.rim;
         const rimR = rim.U * gR.c + rim.W * gR.sn, rimA = rim.U * gR.sn - rim.W * gR.c;
         const kAir = omega / AIR.c;
         let cRad = 0;
@@ -800,7 +854,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
         let wl = 0; if (liq) { const F = comb(sH), g = geo.at(sH); wl = F.W * g.sn + F.U * g.c; }
         let shape = null;
         if (opts.shapes) { const NSH = 48; shape = new Float32Array(NSH + 1); for (let i = 0; i <= NSH; i++) { const F = comb(geo.L * i / NSH); shape[i] = F.W; } }
-        const zMat = m.eta / 2, zRad = cRad / (2 * omega), zVis = cVis / (2 * omega), zSup = 1.5e-5;
+        const zMat = m.eta / 2, zRad = cRad / (2 * omega), zVis = cVis / (2 * omega), zSup = glass.shape.bc === 'pole' ? 4e-5 : 1.5e-5;     // bowl on a cushion vs. glass on its foot
         const zeta = zMat + zRad + zVis + zSup;
         out.push({
           key: n + ':' + j, n, m: j, f, omega, fDry: dryOmega[j] / (2 * Math.PI),
@@ -811,7 +865,7 @@ select{appearance:none;-webkit-appearance:none;background:#0b0f15;color:var(--in
         count++;
       }
     }
-    return { modes: out.sort((a, b) => a.f - b.f), h, volume: vol, sH, fill };
+    return { modes: out.sort((a, b) => a.f - b.f), h, volume: vol, sH, fill, contactS: Math.max(0, geo.L - (opts.contactDepth || 0)) };
   }
 
   // quick profile sampler for drawing (mm)

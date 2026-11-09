@@ -12,6 +12,14 @@ Nothing is sampled, and no oscillator is told what pitch to play.
 - **Finger:** a fingertip pad with measured shear impedance, coupled to the rim through velocity-weakening friction. Stick–slip is solved implicitly every 10 µs against the glass's exact one-step mobility. Skin damping of radial and axial rim motion locks the standing wave's node under your finger, so the pattern follows you around the rim.
 - **Sound:** each mode's radiated power with its cos *nθ* directivity, picked up at two virtual mics.
 
+## Bowl (`bowl.html`)
+
+The same shell FE engine, applied to a hammered Himalayan singing bowl. The meridian closes at the axis, the lip thickens, and the bowl sits free on a cushion. Presets are Thadobati, Jambati, Manipuri, a small hand bowl and a quartz crystal bowl, in bell-bronze, measured-antique (E≈77 GPa, Terwagne & Bush), brass or fused-quartz material.
+
+- **Puja:** the stick presses on the outside wall with unilateral radial contact (a penalty spring-dashpot that can only push) and velocity-weakening friction. A leather wrap stays in contact. Bare wood loses contact once the wall's motion exceeds its static indentation, which produces the rattle.
+- **Rubbing inside doesn't sing.** This emerges from the model and matches Debut & Antunes's experiments.
+- **Mallet strikes and water:** felt or wooden mallets, and water poured in for Faraday ripples and spray.
+
 ## Harp (`harp.html`)
 
 This page holds 4–6 independently simulated glasses, built for iPad multi-touch, one finger per glass.
